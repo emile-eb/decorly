@@ -17,7 +17,7 @@ export default ({ config }: any) => ({
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.decorly.app',
-      buildNumber: '5',
+      buildNumber: '6',
       icon: './assets/App Logo.png',
       infoPlist: {
         NSCameraUsageDescription: 'Used to capture room photos for redesigns.',
