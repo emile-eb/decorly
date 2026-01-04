@@ -5,6 +5,12 @@
         "projectId": "082ebae8-7b08-4de4-8f68-c329fc5d5502"
       }
     },
-    "owner": "emile_eb"
+    "owner": "emile_eb",
+    "ios": {
+      "bundleIdentifier": "com.decorly.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
   }
 }

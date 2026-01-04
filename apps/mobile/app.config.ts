@@ -7,7 +7,7 @@ export default ({ config }: any) => ({
     scheme: 'decorly',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/icon.png',
+    icon: './assets/App Logo.png',
     userInterfaceStyle: 'automatic',
     splash: {
       image: './assets/splash.png',
@@ -17,14 +17,20 @@ export default ({ config }: any) => ({
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.decorly.app',
-      buildNumber: '1',
+      buildNumber: '5',
+      icon: './assets/App Logo.png',
       infoPlist: {
         NSCameraUsageDescription: 'Used to capture room photos for redesigns.',
         NSPhotoLibraryAddUsageDescription: 'Saves redesigned images to your photo library.'
       }
     },
     android: {
-      package: 'com.decorly.app'
+      package: 'com.decorly.app',
+      icon: './assets/App Logo.png',
+      adaptiveIcon: {
+        foregroundImage: './assets/App Logo.png',
+        backgroundColor: '#ffffff'
+      }
     },
     // No native plugins needed for demo/web preview.
     // Add RevenueCat plugin only for native builds if needed later.
