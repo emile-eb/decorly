@@ -1,0 +1,22 @@
+{
+  "name": "decorly-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "install:all": "npm install",
+    "build": "npm run --workspaces build",
+    "dev": "npm run dev -w @decorly/mobile",
+    "dev:all": "concurrently -n api,worker,mobile -c blue,magenta,green \"npm run dev -w @decorly/api\" \"npm run worker:dev -w @decorly/api\" \"npm run dev -w @decorly/mobile\"",
+    "dev:api": "npm run dev -w @decorly/api",
+    "dev:worker": "npm run worker:dev -w @decorly/api",
+    "dev:mobile": "npm run dev -w @decorly/mobile",
+    "dev:mobile:clear": "npm run dev:clear -w @decorly/mobile"
+  },
+  "overrides": {
+    "expo-font": "12.0.10"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
