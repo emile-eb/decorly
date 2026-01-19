@@ -1,0 +1,39 @@
+# Dependencies (installed on the builder)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# VCS / metadata
+.git/
+.gitignore
+.github/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Expo/Build outputs
+.expo/
+.expo-shared/
+web-build/
+dist/
+build/
+android/
+ios/
+
+# Tests & coverage
+__tests__/
+coverage/
+*.spec.*
+*.test.*
+
+# Env files (use EAS secrets)
+.env
+.env.*
+
+# Logs
+*.log
+

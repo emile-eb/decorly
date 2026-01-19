@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, Button, Image, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { compressImage, uploadToInputs } from '../lib/upload';
@@ -21,21 +21,33 @@ export default function UploadScreen() {
     []
   );
 
-  useEffect(() => {
-    (async () => {
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-      await ImagePicker.requestCameraPermissionsAsync();
-    })();
-  }, []);
+  const ensureLibraryPerm = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') throw new Error('Photo library permission denied');
+  };
+  const ensureCameraPerm = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') throw new Error('Camera permission denied');
+  };
 
   const pickImage = async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
-    if (!res.canceled) setUri(res.assets[0].uri);
+    try {
+      await ensureLibraryPerm();
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+      if (!res.canceled) setUri(res.assets[0].uri);
+    } catch (e: any) {
+      Alert.alert('Permission needed', e?.message || 'Unable to access photo library');
+    }
   };
 
   const takePhoto = async () => {
-    const res = await ImagePicker.launchCameraAsync({ quality: 1 });
-    if (!res.canceled) setUri(res.assets[0].uri);
+    try {
+      await ensureCameraPerm();
+      const res = await ImagePicker.launchCameraAsync({ quality: 1 });
+      if (!res.canceled) setUri(res.assets[0].uri);
+    } catch (e: any) {
+      Alert.alert('Permission needed', e?.message || 'Unable to access camera');
+    }
   };
 
   const proceed = async () => {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, FlatList, RefreshControl, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useSessionGate } from '../lib/session';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +11,35 @@ export default function ProfileScreen() {
   const { userId, signOut } = useSessionGate();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Match Settings screen styling
+  const COLORS = {
+    bg: '#f5f6f7',
+    card: '#ffffff',
+    text: '#111827',
+    sub: '#6b7280',
+    black: '#111111',
+    red: '#ef4444',
+    border: '#e5e7eb'
+  } as const;
+
+  const Card = ({ children }: { children: React.ReactNode }) => (
+    <View style={{ backgroundColor: COLORS.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: COLORS.border, marginBottom: 12 }}>{children}</View>
+  );
+  const Row = ({ icon, title, subtitle, onPress, right, danger }: { icon?: any; title: string; subtitle?: string; onPress?: () => void; right?: React.ReactNode; danger?: boolean }) => (
+    <TouchableOpacity activeOpacity={onPress ? 0.7 : 1} onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
+      {icon ? (
+        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          {icon}
+        </View>
+      ) : null}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: danger ? COLORS.red : COLORS.text, fontWeight: '700' }}>{title}</Text>
+        {subtitle ? <Text style={{ color: COLORS.sub, marginTop: 2 }}>{subtitle}</Text> : null}
+      </View>
+      {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={COLORS.sub} /> : null)}
+    </TouchableOpacity>
+  );
 
   const load = async () => {
     try {
@@ -35,76 +65,69 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#ffffff' }} contentContainerStyle={{ padding: 16 }}>
-      {/* Header Row */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-        <View style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-          <Ionicons name="person" size={24} color="#111827" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700' }}>Your Profile</Text>
-          <Text style={{ fontSize: 12, color: '#6b7280' }} numberOfLines={1}>ID: {userId}</Text>
-        </View>
-        <TouchableOpacity onPress={() => nav.navigate('Settings')} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: '#111827' }}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>Settings</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        {/* Profile */}
+        <Card>
+          <Text style={{ color: COLORS.sub, marginBottom: 10 }}>Profile</Text>
+          <Row
+            icon={<Ionicons name="person" size={18} color={COLORS.text} />}
+            title="Your Account"
+            subtitle={userId ? `ID: ${userId}` : undefined}
+            right={<TouchableOpacity onPress={() => nav.navigate('Settings')} style={{ backgroundColor: '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}><Text style={{ color: COLORS.text, fontWeight: '700' }}>Settings</Text></TouchableOpacity>}
+          />
+        </Card>
 
-      {/* Pro Promo Card */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, overflow: 'hidden', marginBottom: 16, backgroundColor: '#fff' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#111827' }}>
-          <Ionicons name="star" size={20} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 8 }}>Go Pro</Text>
-        </View>
-        <View style={{ padding: 16, gap: 8 }}>
-          <Text style={{ fontSize: 14, color: '#111827' }}>Unlock faster renders and HD results.</Text>
-          <TouchableOpacity onPress={() => nav.navigate('Paywall')} style={{ marginTop: 4, alignSelf: 'flex-start', backgroundColor: '#111827', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 }}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Upgrade</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        {/* Go Pro */}
+        <Card>
+          <Text style={{ color: COLORS.sub, marginBottom: 10 }}>Subscription</Text>
+          <Row icon={<Ionicons name="star" size={18} color={COLORS.text} />} title="Go Pro" subtitle="Unlock faster renders and HD results" onPress={() => nav.navigate('Paywall')} />
+        </Card>
 
-      {/* Past Designs */}
-      <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8 }}>Past Designs</Text>
-      {items.length === 0 ? (
-        <View style={{ padding: 16, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, alignItems: 'center' }}>
-          <Text style={{ color: '#6b7280' }}>No designs yet. Start a new one from Explore.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(i) => i.id}
-          numColumns={2}
-          columnWrapperStyle={{ gap: 12 }}
-          contentContainerStyle={{ paddingBottom: 16 }}
-          renderItem={({ item }) => {
-            const thumb = item.outputSignedUrls?.[0] || item.inputSignedUrl;
-            return (
-              <TouchableOpacity onPress={() => openJob(item.id)} style={{ width: '48%', marginBottom: 12 }}>
-                <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' }}>
-                  {thumb ? (
-                    <Image source={{ uri: thumb }} style={{ width: '100%', height: 120 }} resizeMode="cover" />
-                  ) : (
-                    <View style={{ width: '100%', height: 120, backgroundColor: '#f3f4f6' }} />
-                  )}
-                  <View style={{ padding: 8 }}>
-                    <Text style={{ fontSize: 12, color: '#111827' }} numberOfLines={1}>{item.style} • {item.status}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
-          scrollEnabled={false}
-        />
-      )}
+        {/* Past Designs */}
+        <Card>
+          <Text style={{ color: COLORS.sub, marginBottom: 10 }}>Past Designs</Text>
+          {items.length === 0 ? (
+            <View style={{ paddingVertical: 8 }}>
+              <Text style={{ color: COLORS.sub }}>No designs yet. Start a new one from Explore.</Text>
+            </View>
+          ) : (
+            <FlatList
+              showsVerticalScrollIndicator={false}
+              data={items}
+              keyExtractor={(i) => i.id}
+              numColumns={2}
+              columnWrapperStyle={{ gap: 12 }}
+              contentContainerStyle={{ paddingBottom: 8 }}
+              renderItem={({ item }) => {
+                const thumb = item.outputSignedUrls?.[0] || item.inputSignedUrl;
+                return (
+                  <TouchableOpacity onPress={() => openJob(item.id)} style={{ width: '48%', marginBottom: 12 }}>
+                    <View style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, overflow: 'hidden', backgroundColor: COLORS.card }}>
+                      {thumb ? (
+                        <Image source={{ uri: thumb }} style={{ width: '100%', height: 120 }} resizeMode="cover" />
+                      ) : (
+                        <View style={{ width: '100%', height: 120, backgroundColor: '#f3f4f6' }} />
+                      )}
+                      <View style={{ padding: 8 }}>
+                        <Text style={{ fontSize: 12, color: COLORS.text, fontWeight: '700' }} numberOfLines={1}>{item.style} • {item.status}</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+              scrollEnabled={false}
+            />
+          )}
+        </Card>
 
-      {/* Danger zone */}
-      <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <TouchableOpacity onPress={signOut} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: '#ef4444' }}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        {/* Account actions */}
+        <Card>
+          <Text style={{ color: COLORS.sub, marginBottom: 10 }}>Account</Text>
+          <Row icon={<Ionicons name="log-out" size={18} color={COLORS.text} />} title="Sign out" onPress={() => signOut()} />
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

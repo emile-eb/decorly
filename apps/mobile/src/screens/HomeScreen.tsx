@@ -54,12 +54,20 @@ const DATA: CardItem[] = [
     description: 'Refresh facades, materials, and curb appeal.'
   },
   {
-    key: 'reference',
-    title: 'Reference Style',
+    key: 'custom',
+    title: 'Custom',
+    image: 'https://picsum.photos/seed/decorly-custom/1600/900',
+    mode: 'custom',
+    description: 'Describe your own transformation.'
+  },
+  {
+    key: 'declutter',
+    title: 'Declutter',
     image: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1600&auto=format&fit=crop',
-    mode: 'reference',
-    description: 'Match a style from an inspiration photo.'
-  }
+    mode: 'declutter',
+    description: 'Remove visual clutter and simplify spaces.'
+  },
+  
 ];
 
 const CARD_HEIGHT = 300;
@@ -76,17 +84,14 @@ export default function HomeScreen() {
   const paintGif = require('../../assets/PaintCard.gif');
   const floorGif = require('../../assets/Updated FloorCard.gif');
   const replaceGif = require('../../assets/ReplaceCard.gif');
+  const declutterGif = require('../../assets/Declutter Create Gif.gif');
+  const customGif = require('../../assets/Custom Create Gif.gif');
 
   return (
     <FlatList
+      showsVerticalScrollIndicator={false}
       style={{ backgroundColor: '#ffffff' }}
-      contentContainerStyle={{ paddingTop: 24, paddingBottom: 16, backgroundColor: '#ffffff' }}
-      ListHeaderComponent={() => (
-        <View style={{ marginHorizontal: CARD_MARGIN, marginBottom: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: '700' }}>Discover Designs</Text>
-          <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>Pick a category to start redesigning your space.</Text>
-        </View>
-      )}
+      contentContainerStyle={{ paddingTop: 12, paddingBottom: 100, backgroundColor: '#ffffff' }}
       data={DATA}
       keyExtractor={(item) => item.key}
       renderItem={({ item }) => (
@@ -103,8 +108,12 @@ export default function HomeScreen() {
                 ? paintGif
                 : item.key === 'floor'
                 ? floorGif
-                : item.key === 'replace'
+              : item.key === 'replace'
                 ? replaceGif
+                : item.key === 'declutter'
+                ? declutterGif
+                : item.key === 'custom'
+                ? customGif
                 : { uri: item.image }
             }
             style={{ width: CARD_WIDTH, height: IMAGE_HEIGHT }}
@@ -123,6 +132,10 @@ export default function HomeScreen() {
                   ? nav.navigate('PaintCreate', { mode: item.mode, title: item.title })
                   : item.mode === 'floor'
                   ? nav.navigate('FloorCreate', { mode: item.mode, title: item.title })
+                  : item.mode === 'replace'
+                  ? nav.navigate('ReplaceCreate', { mode: item.mode, title: item.title })
+                  : item.mode === 'declutter'
+                  ? nav.navigate('DeclutterCreate', { mode: item.mode, title: item.title })
                   : nav.navigate('InteriorCreate', { mode: item.mode, title: item.title })
               }
               style={{

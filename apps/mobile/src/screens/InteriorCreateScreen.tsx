@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView, Dimensions, TextInput, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -40,18 +41,29 @@ export default function InteriorCreateScreen() {
     []
   );
 
+  // Exterior example photos (local)
+  const exteriorExampleModules = useMemo(
+    () => [
+      require('../../assets/Exterior Example Photo 1.jpg'),
+      require('../../assets/Exterior Example Photo 2.jpg'),
+      require('../../assets/Exterior Example Photo 3.jpg'),
+      require('../../assets/Exterior Example Photo 4.webp'),
+      require('../../assets/Exterior Example Photo 5.jpg'),
+      require('../../assets/Exterior Example Photo 6.webp')
+    ],
+    []
+  );
+
   const examplePhotos = useMemo(() => {
     if (isExterior) {
-      return [
-        'https://picsum.photos/seed/decorly-ex-1/800/600',
-        'https://picsum.photos/seed/decorly-ex-2/800/600',
-        'https://picsum.photos/seed/decorly-ex-3/800/600',
-        'https://picsum.photos/seed/decorly-ex-4/800/600'
-      ];
+      return exteriorExampleModules.map((m) => Asset.fromModule(m).uri);
     }
     // Resolve local assets to URIs (works across native and web)
     return interiorExampleModules.map((m) => Asset.fromModule(m).uri);
-  }, [isExterior, interiorExampleModules]);
+  }, [isExterior, interiorExampleModules, exteriorExampleModules]);
+
+  // Use same exterior example set for home style thumbnails
+  const exteriorHomeStyleImages = useMemo(() => exteriorExampleModules.map((m) => Asset.fromModule(m).uri), [exteriorExampleModules]);
 
   const roomTypes = useMemo(
     () => [
@@ -102,6 +114,25 @@ export default function InteriorCreateScreen() {
     Mediterranean: require('../../assets/Mediterranean Interior Style.jpg')
   } as Record<string, any>), []);
 
+  // Local images corresponding to exterior styles
+  const exteriorStyleImages = useMemo(() => ({
+    Modern: require('../../assets/Exterior Modern Example.jpg'),
+    Contemporary: require('../../assets/Exterior Contemporary Example.jpg'),
+    Craftsman: require('../../assets/Exterior Craftsman Example.jpg'),
+    Colonial: require('../../assets/Exterior Colonial Example.jpg'),
+    Victorian: require('../../assets/Exterior Victorian Example.jpg'),
+    Ranch: require('../../assets/Exterior Ranch Example.jpg'),
+    Tudor: require('../../assets/Exterior Tudor Example.jpg'),
+    Mediterranean: require('../../assets/Exterior Mediterranean Example.png'),
+    'Spanish Revival': require('../../assets/Exterior Spanish Revivial Example.jpg'),
+    'Cape Cod': require('../../assets/Exterior Cape Cod Example.jpg'),
+    'Mid-century Modern': require('../../assets/Exterior Mid Century Modern Example.webp'),
+    Farmhouse: require('../../assets/Exterior Farmhouse Example.jpg'),
+    Cottage: require('../../assets/Exterior Cottage Example.jpg'),
+    Coastal: require('../../assets/Exterior Coastal Example.jpg'),
+    'French Country': require('../../assets/Exterior French Country Example.jpg'),
+    Georgian: require('../../assets/Exterior Georgian Example.jpeg')
+  } as Record<string, any>), []);
   const exteriorStyles = useMemo(
     () => [
       'Custom',
@@ -125,7 +156,7 @@ export default function InteriorCreateScreen() {
     []
   );
 
-  const palettes = useMemo<Palette[]>(
+const palettes = useMemo<Palette[]>(
     () => [
       { label: 'Warm Neutrals', colors: ['#E5D5C5', '#C2A488', '#8C6E5A'] },
       { label: 'Cool Neutrals', colors: ['#E6E8EB', '#BFC5CD', '#6C7A89'] },
@@ -138,7 +169,16 @@ export default function InteriorCreateScreen() {
       { label: 'Terracotta & Cream', colors: ['#D88C65', '#F2E6DA', '#6B4F3B'] },
       { label: 'Sand & Stone', colors: ['#E9E2D0', '#B9B1A4', '#6E6A63'] },
       { label: 'Teal & Copper', colors: ['#1B7F8E', '#B87333', '#F3F4F6'] },
-      { label: 'Greige & Black', colors: ['#DAD7D2', '#8D8A83', '#111111'] }
+      { label: 'Greige & Black', colors: ['#DAD7D2', '#8D8A83', '#111111'] },
+      // Added extended palettes
+      { label: 'Monochrome Grays', colors: ['#F2F2F2', '#9CA3AF', '#111827'] },
+      { label: 'Coastal Blues', colors: ['#E8F1F8', '#7DA4C3', '#2C4F6B'] },
+      { label: 'Sunset Tones', colors: ['#FFD7BA', '#FF9F68', '#D86141'] },
+      { label: 'Moody Jewel', colors: ['#0E2A47', '#245C5C', '#5A2A5A'] },
+      { label: 'Soft Pastels', colors: ['#F8E8EE', '#E7F0FA', '#EAF7E6'] },
+      { label: 'Cream & Espresso', colors: ['#F6F1EA', '#C7B8A0', '#3B2F2F'] },
+      { label: 'Forest Cabin', colors: ['#E5E1D8', '#7A8F74', '#3D4A3E'] },
+      { label: 'Urban Loft', colors: ['#EFEFEF', '#A3A3A3', '#2F2F2F'] }
     ],
     []
   );
@@ -163,7 +203,8 @@ export default function InteriorCreateScreen() {
 
   const handleBack = () => {
     if (step <= 1) {
-      nav.goBack();
+      // Always return to Home explicitly to avoid wrong stack focus
+      nav.navigate('Home');
     } else {
       setStep(step - 1);
     }
@@ -195,9 +236,11 @@ export default function InteriorCreateScreen() {
     if (!localUri) return null;
     if (uploadedPath) return uploadedPath;
     if (!userId) throw new Error('No user');
+    console.log('[ui] InteriorCreate upload starting');
     const compressed = await compressImage(localUri);
     const path = await uploadToInputs(userId, compressed);
     setUploadedPath(path);
+    console.log('[ui] InteriorCreate uploaded', { path });
     return path;
   };
 
@@ -208,7 +251,16 @@ export default function InteriorCreateScreen() {
 
   const submitJob = async () => {
     try {
-      if (!localUri || !uploadedPath) return Alert.alert('Missing photo');
+      console.log('[ui] InteriorCreate submit clicked', { hasLocal: Boolean(localUri), hasUploaded: Boolean(uploadedPath), roomType, style, palette: palette?.label, mode });
+      let finalPath = uploadedPath;
+      if (!finalPath && localUri) {
+        const path = await uploadIfNeeded();
+        if (path) {
+          setUploadedPath(path);
+          finalPath = path;
+        }
+      }
+      if (!localUri || !finalPath) return Alert.alert('Missing photo');
       if (!roomType) return Alert.alert(isExterior ? 'Select a house type' : 'Select a room type');
       if (!style) return Alert.alert('Select a style');
       if (!palette) return Alert.alert('Select a color palette');
@@ -217,13 +269,13 @@ export default function InteriorCreateScreen() {
       const body: any = {
         style: chosenStyle,
         constraints: { [typeKey]: roomType, palette: palette.label, palette_colors: palette.colors, mode },
-        inputImagePath: uploadedPath
+        inputImagePath: finalPath
       };
-      if (localUri) body.__demoLocalUri = localUri;
       const { jobId } = await createJob(body);
       nav.navigate('Progress', { jobId });
     } catch (e: any) {
-      Alert.alert('Failed to start job', e.message);
+      console.error('[ui] InteriorCreate submitJob error', e);
+      (e?.statusCode===402 ? nav.navigate('Paywall') : Alert.alert('Failed to start job', e?.message || ''));
     }
   };
 
@@ -233,7 +285,7 @@ export default function InteriorCreateScreen() {
       <View
         style={{
           width: '100%',
-          aspectRatio: 0.8,
+          aspectRatio: 0.9,
           borderWidth: 2,
           borderStyle: 'dashed',
           borderColor: '#e5e7eb',
@@ -296,7 +348,7 @@ export default function InteriorCreateScreen() {
   const renderStep2 = () => (
     <View style={{ flex: 1, marginTop: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Choose {isExterior ? 'House' : 'Room'} Type</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {(isExterior ? houseTypes : roomTypes).map((r) => {
             const active = roomType === r;
@@ -334,16 +386,16 @@ export default function InteriorCreateScreen() {
   const renderStep3 = () => (
     <View style={{ flex: 1, marginTop: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Choose {isExterior ? 'Home Style' : 'Style'}</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
-          {(isExterior ? exteriorStyles : styles3).map((s) => {
+          {(isExterior ? exteriorStyles : styles3).map((s, idx) => {
             const active = style === s;
             const blank = { uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=' };
             const source = s === 'Custom'
               ? blank
               : isExterior
-              ? { uri: `https://picsum.photos/seed/decorly-${encodeURIComponent(s)}/200/200` }
-              : interiorStyleImages[s] ?? { uri: `https://picsum.photos/seed/decorly-${encodeURIComponent(s)}/200/200` };
+              ? (exteriorStyleImages[s] ?? { uri: `https://picsum.photos/seed/decorly-${encodeURIComponent(s)}/200/200` })
+              : (interiorStyleImages[s] ?? { uri: `https://picsum.photos/seed/decorly-${encodeURIComponent(s)}/200/200` });
             return (
               <TouchableOpacity
                 key={s}
@@ -444,7 +496,7 @@ export default function InteriorCreateScreen() {
   const renderStep4 = () => (
     <View style={{ flex: 1, marginTop: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Choose {isExterior ? 'Exterior' : ''} Color Palette</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
           {(isExterior ? exteriorPalettes : palettes).map((p) => {
             const active = palette?.label === p.label;
@@ -527,7 +579,8 @@ export default function InteriorCreateScreen() {
   const segmentsCount = 4; // Four dashes for four progressive steps
   const completedSegments = Math.min(Math.max(step, 1), segmentsCount);
   return (
-    <View style={{ flex: 1, backgroundColor: '#ffffff', padding: 16, paddingTop: 8 }}>
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <View style={{ flex: 1, backgroundColor: '#ffffff', padding: 16, paddingTop: 8 }}>
       {/* Top bar with back button and progress */}
       <View style={{ flexDirection: 'column', marginBottom: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
@@ -587,11 +640,14 @@ export default function InteriorCreateScreen() {
       {step === 3 && renderStep3()}
       {step === 4 && renderStep4()}
       {step === 5 && renderStep5()}
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
   // Reserved: headerBarWidth if needed for future layout
   const headerBarWidth = Math.round(Dimensions.get('window').width * 0.8);
 
+
+  // no-op
 

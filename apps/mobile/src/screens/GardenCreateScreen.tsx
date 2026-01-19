@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView, Dimensions, TextInput, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Asset } from 'expo-asset';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSessionGate } from '../lib/session';
@@ -170,7 +172,7 @@ export default function GardenCreateScreen() {
 
   const handleBack = () => {
     if (step <= 1) {
-      nav.goBack();
+      nav.navigate('Home');
     } else {
       setStep(step - 1);
     }
@@ -212,23 +214,26 @@ export default function GardenCreateScreen() {
         },
         inputImagePath: uploadedPath
       };
-      if (localUri) body.__demoLocalUri = localUri;
       const { jobId } = await createJob(body);
       nav.navigate('Progress', { jobId });
     } catch (e: any) {
-      Alert.alert('Failed to start job', e.message);
+      console.error('[ui] GardenCreate submitJob error', e);
+      (e?.statusCode===402 ? nav.navigate('Paywall') : Alert.alert('Failed to start job', e?.message || ''));
     }
   };
 
-  const examplePhotos = useMemo(
+  // Use local example photos added to assets (resolved to URIs)
+  const gardenExampleModules = useMemo(
     () => [
-      'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?q=80&w=1600&auto=format&fit=crop',
-      'https://picsum.photos/seed/garden-ex-1/800/600',
-      'https://picsum.photos/seed/garden-ex-2/800/600'
+      require('../../assets/Garden Design Example.jpg'),
+      require('../../assets/Garden Design Example 2.jpg'),
+      require('../../assets/Garden Design Example 3.jpg'),
+      require('../../assets/Garden Design Example 4.jpg'),
+      require('../../assets/Garden Design Example 6.png')
     ],
     []
   );
+  const examplePhotos = useMemo(() => gardenExampleModules.map((m) => Asset.fromModule(m).uri), [gardenExampleModules]);
 
   const renderChip = (label: string, active: boolean, onPress: () => void) => (
     <TouchableOpacity
@@ -253,7 +258,7 @@ export default function GardenCreateScreen() {
       <View
         style={{
           width: '100%',
-          aspectRatio: 0.8,
+          aspectRatio: 0.9,
           borderWidth: 2,
           borderStyle: 'dashed',
           borderColor: '#e5e7eb',
@@ -364,7 +369,7 @@ export default function GardenCreateScreen() {
   const renderStep3 = () => (
     <View style={{ flex: 1, marginTop: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Choose Style</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
         <Text style={{ color: '#6b7280', marginBottom: 6 }}>Style</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', marginBottom: 12 }}>
           {(['No Style', ...gardenStyles] as string[]).map((s) => {
@@ -472,7 +477,7 @@ export default function GardenCreateScreen() {
   const renderStep4 = () => (
     <View style={{ flex: 1, marginTop: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Choose Features</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
           {featureOptions.map((f) => {
             const active = features.includes(f);
@@ -557,15 +562,15 @@ export default function GardenCreateScreen() {
               constraints: { mode, area_type: areaType, features },
               inputImagePath: finalPath
             };
-            if (localUri) body.__demoLocalUri = localUri;
             const { jobId } = await createJob(body);
             nav.navigate('Progress', { jobId });
           } catch (e: any) {
-            Alert.alert('Failed to start job', e.message);
+            console.error('[ui] GardenCreate generate error', e);
+            (e?.statusCode===402 ? nav.navigate('Paywall') : Alert.alert('Failed to start job', e?.message || ''));
           }
         }}
-        disabled={!uploadedPath || !areaType || !style || (style === 'Custom' && !customStyle.trim())}
-        style={{ backgroundColor: uploadedPath && areaType && style && (!(style === 'Custom') || !!customStyle.trim()) ? '#111827' : '#9ca3af', paddingVertical: 16, borderRadius: 20, alignItems: 'center', marginTop: 16 }}
+        disabled={!(uploadedPath || localUri) || !areaType || !style || (style === 'Custom' && !customStyle.trim())}
+        style={{ backgroundColor: (uploadedPath || localUri) && areaType && style && (!(style === 'Custom') || !!customStyle.trim()) ? '#111827' : '#9ca3af', paddingVertical: 16, borderRadius: 20, alignItems: 'center', marginTop: 16 }}
       >
         <Text style={{ color: '#fff', fontWeight: '700' }}>Generate</Text>
       </TouchableOpacity>
@@ -576,7 +581,8 @@ export default function GardenCreateScreen() {
   const segmentsCount = 4;
   const completedSegments = Math.min(Math.max(step, 1), segmentsCount);
   return (
-    <View style={{ flex: 1, backgroundColor: '#ffffff', padding: 16, paddingTop: 8 }}>
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <View style={{ flex: 1, backgroundColor: '#ffffff', padding: 16, paddingTop: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
         <TouchableOpacity
           onPress={handleBack}
@@ -594,6 +600,7 @@ export default function GardenCreateScreen() {
           <Ionicons name="chevron-back" size={22} color="#111827" />
         </TouchableOpacity>
         <Text style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700' }}>{title}</Text>
+        <View style={{ width: 32, height: 32, marginLeft: 8 }} />
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
@@ -616,6 +623,8 @@ export default function GardenCreateScreen() {
       {step === 3 && renderStep3()}
       {step === 4 && renderStep4()}
       {step === 5 && renderStep5()}
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
+

@@ -1,0 +1,14 @@
+{
+  "cli": {
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": { "ios": { "image": "latest" } },
+    "production": {
+      "ios": { "image": "latest" },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://decorly-production.up.railway.app/"
+      }
+    }
+  }
+}

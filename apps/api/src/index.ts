@@ -7,7 +7,7 @@ import { jobsRoutes } from './routes/jobs.js';
 import { webhooksRoutes } from './routes/webhooks.js';
 
 // Allow local .env to override OS env during dev to simplify toggling
-config({ override: true });
+config({ override: process.env.NODE_ENV !== 'production' })
 const env = loadEnv();
 
 const app = Fastify({
@@ -20,7 +20,11 @@ await app.register(sensible);
 await app.register(jobsRoutes, { env });
 await app.register(webhooksRoutes, { env });
 
-const port = env.PORT;
+// Simple health endpoints for quick checks/warmups
+app.get('/', async (_req, reply) => reply.code(200).send({ ok: true }));
+app.get('/health', async (_req, reply) => reply.code(200).send({ ok: true }));
+
+const port = Number(process.env.PORT) || env.PORT
 app.listen({ port, host: '0.0.0.0' }).then(() => {
   app.log.info(`API listening on http://localhost:${port}`);
 });

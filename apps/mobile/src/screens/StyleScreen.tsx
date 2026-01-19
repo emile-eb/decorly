@@ -15,10 +15,10 @@ export default function StyleScreen() {
     try {
       const constraintsObj = constraints ? JSON.parse(constraints) : undefined;
       const body: any = { style, constraints: constraintsObj, inputImagePath };
-      if (inputLocalUri) body.__demoLocalUri = inputLocalUri;
       const { jobId } = await createJob(body);
       nav.navigate('Progress', { jobId });
     } catch (e: any) {
+      console.error('[ui] StyleScreen submit error', e);
       Alert.alert('Job creation failed', e.message);
     }
   };

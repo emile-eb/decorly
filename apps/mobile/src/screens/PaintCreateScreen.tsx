@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, ScrollView, Dimensions, TextInput, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -50,27 +51,76 @@ export default function PaintCreateScreen() {
     []
   );
   const [palette, setPalette] = useState<Palette | null>(null);
-  const [customOverlayOpen, setCustomOverlayOpen] = useState(false);
-  const [customPaletteText, setCustomPaletteText] = useState('');
   const colorOptions = useMemo(
     () => [
+      // Whites / Neutrals
       { label: 'Warm White', hex: '#F5F2EB' },
       { label: 'Pure White', hex: '#FFFFFF' },
-      { label: 'Greige', hex: '#CFC9BF' },
+      { label: 'Ivory', hex: '#FFFFF0' },
+      { label: 'Antique White', hex: '#FAEBD7' },
+      { label: 'Cream', hex: '#F7F3E9' },
+      { label: 'Alabaster', hex: '#EEEAE2' },
       { label: 'Soft Gray', hex: '#D9DBE0' },
-      { label: 'Sage', hex: '#A9B5A1' },
+      { label: 'Cool Gray', hex: '#C7CDD3' },
+      { label: 'Pewter', hex: '#8A8F98' },
+      { label: 'Greige', hex: '#CFC9BF' },
+      { label: 'Stone', hex: '#BDB5A7' },
+      { label: 'Taupe', hex: '#B8AAA0' },
+      { label: 'Sand', hex: '#D8CBB6' },
+      { label: 'Beige', hex: '#D6C9B6' },
+      { label: 'Oat', hex: '#DDD2BF' },
+      // Browns / Earthy
+      { label: 'Cappuccino', hex: '#AD8A64' },
+      { label: 'Chestnut', hex: '#8B5E3C' },
+      { label: 'Walnut', hex: '#6B4F3A' },
+      { label: 'Mocha', hex: '#7B4F3A' },
+      // Blues
+      { label: 'Sky Blue', hex: '#A8C4D7' },
+      { label: 'Powder Blue', hex: '#CFE3F3' },
+      { label: 'Robin Egg', hex: '#9FD3E6' },
+      { label: 'Slate Blue', hex: '#5F87A1' },
+      { label: 'Steel Blue', hex: '#3E6A8A' },
+      { label: 'Denim', hex: '#224C73' },
       { label: 'Navy', hex: '#1F2A44' },
-      { label: 'Charcoal', hex: '#2B2E34' },
+      // Greens
+      { label: 'Sage', hex: '#A9B5A1' },
+      { label: 'Olive', hex: '#747F54' },
+      { label: 'Forest', hex: '#2E5E4E' },
+      { label: 'Hunter Green', hex: '#2E4F3A' },
+      { label: 'Eucalyptus', hex: '#8BB89A' },
+      { label: 'Mint', hex: '#BEE3C4' },
+      { label: 'Deep Teal', hex: '#1F4A4F' },
+      // Warm Accents
       { label: 'Blush', hex: '#F6D6D8' },
+      { label: 'Rose', hex: '#E8B1B6' },
+      { label: 'Coral', hex: '#FF7F50' },
       { label: 'Terracotta', hex: '#C97A5A' },
-      { label: 'Black', hex: '#111111' }
+      { label: 'Rust', hex: '#B45A3C' },
+      { label: 'Copper', hex: '#B87333' },
+      { label: 'Mustard', hex: '#D1A73D' },
+      { label: 'Goldenrod', hex: '#DAA520' },
+      // Purples / Dramatic
+      { label: 'Lavender', hex: '#C9B7E7' },
+      { label: 'Mauve', hex: '#A8899C' },
+      { label: 'Aubergine', hex: '#4B2E39' },
+      { label: 'Charcoal', hex: '#2B2E34' },
+      { label: 'Graphite', hex: '#3B3F46' },
+      { label: 'Black', hex: '#111111' },
+      // Extras
+      { label: 'Pearl', hex: '#F2F1EC' },
+      { label: 'Snow', hex: '#FAFAFA' },
+      { label: 'Cobalt', hex: '#0047AB' },
+      { label: 'Teal Blue', hex: '#367588' },
+      { label: 'Seafoam', hex: '#9FE2BF' },
+      { label: 'Spruce', hex: '#2C4F47' },
+      { label: 'Clay', hex: '#B66A50' },
+      { label: 'Brick', hex: '#8B3A3A' },
+      { label: 'Canary', hex: '#FFF59E' },
+      { label: 'Indigo', hex: '#3F51B5' }
     ],
     []
   );
   const [selectedColor, setSelectedColor] = useState<{ label: string; hex: string } | null>(null);
-  const [customColorOpen, setCustomColorOpen] = useState(false);
-  const [customHex, setCustomHex] = useState<string>('#FFFFFF');
-  // Removed color wheel picker; use simple input methods instead
 
   // Example photos (moved inside component to avoid invalid hook call)
   const interiorExampleModules = useMemo(
@@ -90,7 +140,7 @@ export default function PaintCreateScreen() {
   const completedSegments = Math.min(Math.max(step, 1), segmentsCount);
 
   const handleBack = () => {
-    if (step <= 1) nav.goBack();
+    if (step <= 1) nav.navigate('Home');
     else setStep(step - 1);
   };
 
@@ -104,24 +154,26 @@ export default function PaintCreateScreen() {
   };
 
   const uploadNow = async () => {
-    if (!localUri) return;
+    if (!localUri) return null as string | null;
     if (!userId) {
       Alert.alert('Not signed in', 'Please sign in to upload a photo.');
-      return;
+      return null;
     }
     try {
       const compressed = await compressImage(localUri);
       const path = await uploadToInputs(userId, compressed);
       setUploadedPath(path);
+      return path;
     } catch (e: any) {
       Alert.alert('Upload failed', e?.message ?? 'Unable to upload image');
+      return null;
     }
   };
 
   const renderStep1 = () => (
     <View style={{ flex: 1, marginTop: 8 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Upload Photo</Text>
-      <View style={{ width: '100%', aspectRatio: 0.8, borderWidth: 2, borderStyle: 'dashed', borderColor: '#e5e7eb', backgroundColor: '#f9fafb', borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <View style={{ width: '100%', aspectRatio: 0.9, borderWidth: 2, borderStyle: 'dashed', borderColor: '#e5e7eb', backgroundColor: '#f9fafb', borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         {localUri ? (
           <Image source={{ uri: localUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
@@ -188,7 +240,7 @@ export default function PaintCreateScreen() {
   );
 
   const renderStep2 = () => (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 16 }}>
+    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Current Conditions</Text>
       <ChipRow title="Room Type" options={roomTypes} value={roomType} onChange={setRoomType} />
       <ChipRow title="Lighting (Time)" options={['Day', 'Night']} value={lightTime} onChange={(v) => setLightTime(v as any)} />
@@ -238,18 +290,14 @@ export default function PaintCreateScreen() {
   const renderStep3 = () => (
     <View style={{ flex: 1, marginTop: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Choose Color</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
-          {[{ label: 'Custom...', hex: customHex }, ...colorOptions].map((c) => {
+          {colorOptions.map((c) => {
             const active = selectedColor?.label === c.label;
             return (
               <TouchableOpacity
                 key={c.label}
                 onPress={() => {
-                  if (c.label === 'Custom...') {
-                    setCustomColorOpen(true);
-                    return;
-                  }
                   setSelectedColor(c);
                 }}
                 style={{ width: '48%', borderRadius: 12, borderWidth: active ? 2 : 1, borderColor: active ? '#111827' : '#e5e7eb', backgroundColor: active ? '#111827' : '#fff', overflow: 'hidden', paddingBottom: 12 }}
@@ -264,49 +312,6 @@ export default function PaintCreateScreen() {
           })}
         </View>
       </ScrollView>
-      {/* Custom color overlay */}
-      {customColorOpen && (
-        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 50, alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }} />
-          <View style={{ width: Math.min(Dimensions.get('window').width * 0.9, 380), backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e5e7eb' }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>Pick a custom color</Text>
-            {Platform.OS === 'web' ? (
-              React.createElement('input', {
-                type: 'color',
-                value: customHex,
-                onChange: (e: any) => setCustomHex(e.target.value),
-                style: { width: '100%', height: 48, border: '1px solid #e5e7eb', borderRadius: 8, padding: 0 }
-              } as any)
-            ) : (
-              <View style={{ gap: 8 }}>
-                <TextInput value={customHex} onChangeText={setCustomHex} placeholder="#RRGGBB" autoCapitalize="none" style={{ borderWidth: 1, borderColor: '#e5e7eb', padding: 12, borderRadius: 8 }} />
-              </View>
-            )}
-            {/* Live preview rectangle below the picker/input */}
-            <View style={{ width: '100%', height: 48, borderRadius: 8, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: customHex, marginTop: 12 }} />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-              <TouchableOpacity onPress={() => setCustomColorOpen(false)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: '#e5e7eb' }}>
-                <Text style={{ color: '#111827', fontWeight: '700' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  const hex = (customHex || '').trim();
-                  const valid = /^#([0-9a-fA-F]{6})$/.test(hex);
-                  if (!valid) {
-                    Alert.alert('Invalid color', 'Enter a hex like #AABBCC');
-                    return;
-                  }
-                  setSelectedColor({ label: 'Custom', hex });
-                  setCustomColorOpen(false);
-                }}
-                style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: '#111827' }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
       <TouchableOpacity onPress={() => setStep(3)} disabled={!selectedColor} style={{ backgroundColor: selectedColor ? '#111827' : '#9ca3af', paddingVertical: 16, borderRadius: 20, alignItems: 'center', marginTop: 16 }}>
         <Text style={{ color: '#fff', fontWeight: '700' }}>Continue</Text>
       </TouchableOpacity>
@@ -339,19 +344,21 @@ export default function PaintCreateScreen() {
       <TouchableOpacity
         onPress={async () => {
           try {
-            if (!uploadedPath && localUri) {
-              await uploadNow();
+            let finalPath = uploadedPath;
+            if (!finalPath && localUri) {
+              finalPath = await uploadNow();
             }
-            if (!uploadedPath) return Alert.alert('Missing photo');
+            if (!finalPath) return Alert.alert('Missing photo');
             const constraints: any = { mode, color: selectedColor };
-            const { jobId } = await createJob({ style: 'paint', constraints, inputImagePath: uploadedPath });
+            const { jobId } = await createJob({ style: 'paint', constraints, inputImagePath: finalPath });
             nav.navigate('Progress', { jobId });
           } catch (e: any) {
-            Alert.alert('Failed to start job', e.message);
+            console.error('[ui] PaintCreate generate error', e);
+            (e?.statusCode===402 ? nav.navigate('Paywall') : Alert.alert('Failed to start job', e?.message || ''));
           }
         }}
-        disabled={!uploadedPath || !selectedColor}
-        style={{ backgroundColor: uploadedPath && selectedColor ? '#111827' : '#9ca3af', paddingVertical: 16, borderRadius: 20, alignItems: 'center', marginTop: 16 }}
+        disabled={!localUri || !selectedColor}
+        style={{ backgroundColor: localUri && selectedColor ? '#111827' : '#9ca3af', paddingVertical: 16, borderRadius: 20, alignItems: 'center', marginTop: 16 }}
       >
         <Text style={{ color: '#fff', fontWeight: '700' }}>Generate</Text>
       </TouchableOpacity>
@@ -359,12 +366,14 @@ export default function PaintCreateScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#ffffff', padding: 16, paddingTop: 8 }}>
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <View style={{ flex: 1, backgroundColor: '#ffffff', padding: 16, paddingTop: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
         <TouchableOpacity onPress={handleBack} accessibilityRole="button" style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
           <Ionicons name="chevron-back" size={22} color="#111827" />
         </TouchableOpacity>
         <Text style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700' }}>{title}</Text>
+        <View style={{ width: 32, height: 32, marginLeft: 8 }} />
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
@@ -376,6 +385,8 @@ export default function PaintCreateScreen() {
       {step === 1 && renderStep1()}
       {step === 2 && renderStep3()}
       {step === 3 && renderStep4()}
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
+
