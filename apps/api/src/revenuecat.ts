@@ -1,4 +1,4 @@
-import type { Env } from './env';
+import type { Env } from './env.js';
 
 export type RevenueCatCheck = {
   entitled: boolean;
@@ -24,4 +24,3 @@ export async function checkRevenueCatEntitlement(env: Env, appUserId: string): P
   const active = Boolean(entitlement?.expires_date === null || new Date(entitlement?.expires_date) > new Date());
   return { entitled: active, raw: json };
 }
-

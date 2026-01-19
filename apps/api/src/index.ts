@@ -2,11 +2,12 @@ import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
 import { config } from 'dotenv';
-import { loadEnv } from './env';
-import { jobsRoutes } from './routes/jobs';
-import { webhooksRoutes } from './routes/webhooks';
+import { loadEnv } from './env.js';
+import { jobsRoutes } from './routes/jobs.js';
+import { webhooksRoutes } from './routes/webhooks.js';
 
-config();
+// Allow local .env to override OS env during dev to simplify toggling
+config({ override: true });
 const env = loadEnv();
 
 const app = Fastify({
@@ -23,4 +24,3 @@ const port = env.PORT;
 app.listen({ port, host: '0.0.0.0' }).then(() => {
   app.log.info(`API listening on http://localhost:${port}`);
 });
-

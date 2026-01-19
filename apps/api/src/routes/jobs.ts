@@ -1,9 +1,9 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import type { Env } from '../env';
-import { createSupabaseAdmin, getUserFromToken } from '../supabase';
-import { checkRevenueCatEntitlement } from '../revenuecat';
-import { createSignedUrl } from '../storage';
+import type { Env } from '../env.js';
+import { createSupabaseAdmin, getUserFromToken } from '../supabase.js';
+import { checkRevenueCatEntitlement } from '../revenuecat.js';
+import { createSignedUrl } from '../storage.js';
 
 const bodySchema = z.object({
   style: z.string().min(1),
@@ -25,9 +25,11 @@ export const jobsRoutes: FastifyPluginAsync<{ env: Env }> = async (app: FastifyI
       const parsed = bodySchema.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
 
-      // Enforce RevenueCat entitlement server-side
-      const rc = await checkRevenueCatEntitlement(env, user.id);
-      if (!rc.entitled) return reply.code(402).send({ error: 'Subscription required' });
+      // Enforce RevenueCat entitlement server-side (allow bypass in dev)
+      if (!env.SKIP_ENTITLEMENTS) {
+        const rc = await checkRevenueCatEntitlement(env, user.id);
+        if (!rc.entitled) return reply.code(402).send({ error: 'Subscription required' });
+      }
 
       const { style, constraints, inputImagePath } = parsed.data;
       const { data, error } = await supabase
@@ -68,10 +70,17 @@ export const jobsRoutes: FastifyPluginAsync<{ env: Env }> = async (app: FastifyI
       // Attach signed URLs
       const inputSigned = await createSignedUrl(env, 'room_inputs', data.input_image_path, 3600);
       let outputSigned: string[] = [];
-      if (Array.isArray(data.output_image_paths) && data.output_image_paths.length)
-        outputSigned = await Promise.all(
-          data.output_image_paths.map((p: string) => createSignedUrl(env, 'room_outputs', p, 3600))
-        );
+      if (Array.isArray(data.output_image_paths) && data.output_image_paths.length) {
+        try {
+          outputSigned = await Promise.all(
+            data.output_image_paths.map((p: string) => createSignedUrl(env, 'room_outputs', p, 3600))
+          );
+        } catch (e: any) {
+          req.log.error({ id, err: String(e?.message || e) }, 'signed url generation failed');
+        }
+      }
+
+      req.log.info({ id, status: data.status, hasOutputs: Array.isArray(data.output_image_paths) && data.output_image_paths.length > 0, outputsCount: data.output_image_paths?.length || 0 }, 'jobs.get detail');
 
       return reply.send({
         ...data,
@@ -104,4 +113,3 @@ export const jobsRoutes: FastifyPluginAsync<{ env: Env }> = async (app: FastifyI
     }
   });
 };
-

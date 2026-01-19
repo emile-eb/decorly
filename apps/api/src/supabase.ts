@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Env } from './env';
+import type { Env } from './env.js';
 
 export function createSupabaseAdmin(env: Env) {
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
@@ -16,4 +16,3 @@ export async function getUserFromToken(env: Env, token: string) {
   }
   return data.user;
 }
-

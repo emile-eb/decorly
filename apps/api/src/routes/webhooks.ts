@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import type { Env } from '../env';
+import type { Env } from '../env.js';
 
 // For MVP we log webhook and return 200
 export const webhooksRoutes: FastifyPluginAsync<{ env: Env }> = async (app: FastifyInstance) => {
@@ -9,4 +9,3 @@ export const webhooksRoutes: FastifyPluginAsync<{ env: Env }> = async (app: Fast
     return reply.code(200).send({ ok: true });
   });
 };
-
