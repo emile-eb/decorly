@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 import type { Env } from '../env.js';
 import { getUserFromToken } from '../supabase.js';
 import { uploadBuffer } from '../storage.js';
@@ -45,7 +46,7 @@ export const uploadsRoutes: FastifyPluginAsync<{ env: Env }> = async (app: Fasti
         return reply.code(400).send({ error: 'Image too small' });
       }
 
-      const filename = `${crypto.randomUUID()}.${(ext || 'jpg').replace(/[^a-z0-9]/gi, '')}`;
+      const filename = `${randomUUID()}.${(ext || 'jpg').replace(/[^a-z0-9]/gi, '')}`;
       const path = `${user.id}/${filename}`;
       await uploadBuffer(env, 'room_inputs', path, buf, mime || 'image/jpeg');
 
@@ -56,4 +57,3 @@ export const uploadsRoutes: FastifyPluginAsync<{ env: Env }> = async (app: Fasti
     }
   });
 };
-
