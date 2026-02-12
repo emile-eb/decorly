@@ -2,7 +2,9 @@
   "name": "decorly-monorepo",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "install:all": "npm install",
     "build": "npm run --workspaces build",
@@ -11,12 +13,17 @@
     "dev:api": "npm run dev -w @decorly/api",
     "dev:worker": "npm run worker:dev -w @decorly/api",
     "dev:mobile": "npm run dev -w @decorly/mobile",
-    "dev:mobile:clear": "npm run dev:clear -w @decorly/mobile"
+    "dev:mobile:clear": "npm run dev:clear -w @decorly/mobile",
+    "postinstall": "patch-package || node scripts/patch-expo-dev-menu.js"
   },
   "overrides": {
     "expo-font": "12.0.10"
   },
   "devDependencies": {
-    "concurrently": "^9.0.1"
+    "concurrently": "^9.0.1",
+    "patch-package": "^6.5.0"
+  },
+  "dependencies": {
+    "react-native-purchases": "^9.7.6"
   }
 }

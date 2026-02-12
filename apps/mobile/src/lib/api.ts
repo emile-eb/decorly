@@ -1,5 +1,10 @@
 import { CONFIG } from './config';
 import { supabase } from './supabase';
+import { isPro } from './purchases';
+
+// Quick visibility: confirm which API base URL the app is using on device
+// This logs once when the API module is loaded
+console.log('[mobile] API_BASE_URL', CONFIG.API_BASE_URL);
 
 async function ensureAuthHeader() {
   // Try to get an existing session; if missing, create an anonymous one
@@ -52,6 +57,14 @@ async function fetchWithRetry(input: RequestInfo | URL, init: RequestInit = {}, 
 }
 
 export async function createJob(params: { style: string; constraints?: any; inputImagePath: string }) {
+  if (!__DEV__) {
+    const entitled = await isPro();
+    if (!entitled) {
+      const err: any = new Error('Subscription required');
+      err.statusCode = 402;
+      throw err;
+    }
+  }
   const headers = await ensureAuthHeader();
   const payload = {
     style: params.style,
@@ -96,4 +109,14 @@ export async function listJobs() {
     throw new Error(text || `Request failed with status ${res.status}`);
   }
   return res.json();
+}
+
+// Optional: warm the API to reduce cold start impact on free tiers
+export async function wakeApi() {
+  try {
+    const url = joinUrl(CONFIG.API_BASE_URL, '/health');
+    await fetchWithRetry(url, {}, 1, 4000);
+  } catch {
+    // ignore warmup errors
+  }
 }

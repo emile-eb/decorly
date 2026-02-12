@@ -19,11 +19,17 @@ export const jobsRoutes: FastifyPluginAsync<{ env: Env }> = async (app: FastifyI
     try {
       const auth = req.headers.authorization;
       const token = auth?.startsWith('Bearer ') ? auth.slice(7) : undefined;
-      if (!token) return reply.code(401).send({ error: 'Missing Bearer token' });
+      if (!token) {
+        req.log.warn({ hasAuth: false }, 'missing bearer token');
+        return reply.code(401).send({ error: 'Missing Bearer token' });
+      }
       const user = await getUserFromToken(env, token);
 
       const parsed = bodySchema.safeParse(req.body);
-      if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+      if (!parsed.success) {
+        req.log.warn({ issues: parsed.error.issues?.slice(0, 3) }, 'invalid body');
+        return reply.code(400).send({ error: parsed.error.flatten() });
+      }
 
       // Enforce RevenueCat entitlement server-side (allow bypass in dev)
       if (!env.SKIP_ENTITLEMENTS) {
@@ -46,7 +52,7 @@ export const jobsRoutes: FastifyPluginAsync<{ env: Env }> = async (app: FastifyI
       if (error) throw error;
       return reply.send({ jobId: data.id });
     } catch (e: any) {
-      req.log.error(e);
+      req.log.error({ err: String(e?.message || e) }, 'create job failed');
       return reply.code(500).send({ error: 'Failed to create job' });
     }
   });

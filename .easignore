@@ -1,0 +1,40 @@
+# Monorepo root .easignore (only used if you run `eas build` from repo root)
+
+# Dependencies
+node_modules/
+apps/*/node_modules/
+
+# VCS / metadata
+.git/
+.gitignore
+.github/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Expo/Build outputs in any workspace
+**/.expo/
+**/.expo-shared/
+**/web-build/
+**/dist/
+**/build/
+**/android/
+**/ios/
+
+# Tests & coverage
+**/__tests__/
+**/coverage/
+**/*.spec.*
+**/*.test.*
+
+# Env files (prefer EAS secrets)
+.env
+.env.*
+apps/**/.env*
+
+# Logs
+**/*.log
+

@@ -22,7 +22,7 @@ export default function GardenCreateScreen() {
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
 
-  // Step 2 – site conditions
+  // Step 2 - site conditions
   const [areaType, setAreaType] = useState<string | null>(null);
   const [sunlight, setSunlight] = useState<string | null>(null);
   const [zone, setZone] = useState<string>('');
@@ -31,13 +31,13 @@ export default function GardenCreateScreen() {
   const [slope, setSlope] = useState<string | null>(null);
   const [wind, setWind] = useState<string | null>(null);
 
-  // Step 3 – style + palette
+  // Step 3 - style + palette
   const [style, setStyle] = useState<string | null>(null);
   const [customStyle, setCustomStyle] = useState<string>('');
   const [customOverlayOpen, setCustomOverlayOpen] = useState<boolean>(false);
   const [palette, setPalette] = useState<Palette | null>(null);
 
-  // Step 4 – features & budget
+  // Step 4 - features & budget
   const [features, setFeatures] = useState<string[]>([]);
   const [maintenance, setMaintenance] = useState<string | null>(null);
   const [irrigation, setIrrigation] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function GardenCreateScreen() {
       'Modern Minimal',
       'Mediterranean',
       'Japanese',
-      'Desert / Drought‑tolerant',
+      'Desert / Drought-tolerant',
       'Woodland',
       'Pollinator',
       'French',
@@ -123,7 +123,6 @@ export default function GardenCreateScreen() {
     French: require('../../assets/French Garden Style.png'),
     Bohemian: require('../../assets/Bohemain Garden Style.png'),
     'Desert / Drought-tolerant': require('../../assets/Desert Garden Style.png'),
-    'Desert / Drought�?`tolerant': require('../../assets/Desert Garden Style.png')
   }) as Record<string, any>, []);
 
   const resolveStyleImage = (label: string) => {
@@ -176,6 +175,9 @@ export default function GardenCreateScreen() {
     } else {
       setStep(step - 1);
     }
+  };
+  const handleExit = () => {
+    nav.navigate('Home');
   };
 
   const continueFromStep1 = async () => {
@@ -600,7 +602,21 @@ export default function GardenCreateScreen() {
           <Ionicons name="chevron-back" size={22} color="#111827" />
         </TouchableOpacity>
         <Text style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700' }}>{title}</Text>
-        <View style={{ width: 32, height: 32, marginLeft: 8 }} />
+        <TouchableOpacity
+          onPress={handleExit}
+          accessibilityRole="button"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 999,
+            backgroundColor: '#f3f4f6',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: 8
+          }}
+        >
+          <Ionicons name="close" size={20} color="#111827" />
+        </TouchableOpacity>
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 8 }}>

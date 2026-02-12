@@ -10,8 +10,12 @@ export default function ProgressScreen() {
   const [status, setStatus] = useState('queued');
   const [error, setError] = useState<string | null>(null);
   const [inputUrl, setInputUrl] = useState<string | null>(null);
-  const translateY = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(1.18)).current;
   const bar = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    nav.setOptions({ headerBackVisible: false, gestureEnabled: false });
+  }, [nav]);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,11 +43,11 @@ export default function ProgressScreen() {
   }, [jobId]);
 
   useEffect(() => {
-    // subtle vertical pan animation to give a "scanning" feel over the uploaded image
+    // Gentle zoom pulse to avoid exposing image edges
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(translateY, { toValue: -30, duration: 1500, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.quad), useNativeDriver: true })
+        Animated.timing(scale, { toValue: 1.24, duration: 2600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.18, duration: 2600, easing: Easing.inOut(Easing.quad), useNativeDriver: true })
       ])
     );
     anim.start();
@@ -51,11 +55,11 @@ export default function ProgressScreen() {
   }, []);
 
   useEffect(() => {
-    // indeterminate loading bar animation
+    // smoother indeterminate loading bar animation
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(bar, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
-        Animated.timing(bar, { toValue: 0, duration: 0, useNativeDriver: false })
+        Animated.timing(bar, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+        Animated.timing(bar, { toValue: 0, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: false })
       ])
     );
     loop.start();
@@ -64,11 +68,11 @@ export default function ProgressScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 56 }}>
         {inputUrl ? (
           <View style={{ width: '86%', aspectRatio: 3/4, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }}>
-            <Animated.View style={{ transform: [{ translateY }] }}>
-              <Image source={{ uri: inputUrl }} style={{ width: '100%', height: undefined, aspectRatio: 3/4 }} resizeMode="cover" />
+            <Animated.View style={{ height: '100%', transform: [{ scale }] }}>
+              <Image source={{ uri: inputUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             </Animated.View>
           </View>
         ) : (

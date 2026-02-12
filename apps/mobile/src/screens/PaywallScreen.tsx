@@ -6,12 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { initPurchases, getOfferings, purchasePackage, restorePurchases, getCustomerInfo } from '../lib/purchases';
 import { useSessionGate } from '../lib/session';
 import Toggle from '../components/Toggle';
+import { trackEvent, trackPurchase } from '../lib/meta';
 
 export default function PaywallScreen() {
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { signOut } = useSessionGate();
-  const [useTrial, setUseTrial] = useState(true);
   // Use local animated GIF for hero
   const heroSource = require('../../assets/Paywall Gif.gif');
   const [selectedPlan, setSelectedPlan] = useState<'WEEKLY' | 'MONTHLY' | 'YEARLY'>('YEARLY');
@@ -29,7 +29,9 @@ export default function PaywallScreen() {
       } catch {}
     })();
   }, []);
-
+  useEffect(() => {
+    trackEvent('paywall_viewed');
+  }, []);
   // Find a package by plan using packageType first, then common identifiers
   const findPackageByPlan = (plan: 'WEEKLY' | 'MONTHLY' | 'YEARLY') => {
     // Prefer matching by packageType from RevenueCat SDK
@@ -45,6 +47,9 @@ export default function PaywallScreen() {
     const byId = packages.find((p: any) => candidates.includes(p.identifier));
     return byId || packages[0];
   };
+
+  const activePackage = findPackageByPlan(selectedPlan);
+  const purchaseDisabled = !activePackage;
 
   return (
     <ScrollView
@@ -86,33 +91,12 @@ export default function PaywallScreen() {
             <Text style={{ marginTop: 6, fontSize: 16, color: '#6b7280', textAlign: 'center' }}>
               Unlock unlimited designs and generations
             </Text>
-            {/* Free trial toggle row */}
-            <View
-              style={{
-                marginTop: 16,
-                width: '100%',
-                borderWidth: 0,
-                borderColor: 'transparent',
-                borderRadius: 12,
-                backgroundColor: '#f3f4f6',
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>Use Free Trial</Text>
-              {/* Custom toggle */}
-              <Toggle value={useTrial} onValueChange={setUseTrial} />
-            </View>
-
             {/* Subscription plan buttons */}
-            {[
-              { key: 'YEARLY' as const, label: 'Yearly', price: 39.99, cadence: 'year' },
-              { key: 'MONTHLY' as const, label: 'Monthly', price: 19.99, cadence: 'month' },
-              { key: 'WEEKLY' as const, label: 'Weekly', price: 9.99, cadence: 'week' }
-            ].map((p, idx) => {
+            {([
+                  { key: 'YEARLY' as const, label: 'Yearly', price: 39.99, cadence: 'year' },
+                  { key: 'MONTHLY' as const, label: 'Monthly', price: 19.99, cadence: 'month' },
+                  { key: 'WEEKLY' as const, label: 'Weekly', price: 9.99, cadence: 'week' }
+                ]).map((p, idx) => {
               const active = selectedPlan === p.key;
               const weeklyDisplay = p.key === 'YEARLY' ? '$.99/wk' : p.key === 'MONTHLY' ? '$4.99/wk' : '$9.99/wk';
               return (
@@ -157,7 +141,9 @@ export default function PaywallScreen() {
 
                   {/* Right: price block */}
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{weeklyDisplay}</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
+                      {weeklyDisplay}
+                    </Text>
                     <Text style={{ fontSize: 12, color: '#6b7280' }}>${p.price.toFixed(2)}/{p.cadence}</Text>
                   </View>
                 </TouchableOpacity>
@@ -166,12 +152,20 @@ export default function PaywallScreen() {
             <TouchableOpacity
               onPress={async () => {
                 try {
-                  const pkg = findPackageByPlan(selectedPlan);
-                  if (!pkg) return Alert.alert('No purchase available');
+                  const pkg = activePackage;
+                  if (!pkg) return Alert.alert('No purchase available', 'Purchases are not available at the moment.');
+                  trackEvent('initiate_checkout', { plan: selectedPlan });
                   await purchasePackage(pkg);
                   const info = await getCustomerInfo();
                   const active = (info as any)?.entitlements?.active?.pro;
                   if (active) {
+                    const price = Number(pkg?.product?.price ?? pkg?.product?.priceAmount ?? 0);
+                    const currency = String(pkg?.product?.currencyCode ?? 'USD');
+                    if (price > 0) {
+                      trackPurchase(price, currency, { plan: selectedPlan });
+                    } else {
+                      trackEvent('purchase', { plan: selectedPlan });
+                    }
                     Alert.alert('You are Pro!');
                     nav.goBack();
                   } else {
@@ -183,14 +177,15 @@ export default function PaywallScreen() {
               }}
               activeOpacity={0.9}
               style={{
-                backgroundColor: '#ff0000',
+                backgroundColor: purchaseDisabled ? '#f3f4f6' : '#ff0000',
                 paddingVertical: 16,
                 borderRadius: 14,
                 alignItems: 'center',
                 marginTop: 14
               }}
+              disabled={purchaseDisabled}
             >
-              <Text style={{ color: '#fff', fontWeight: '800' }}>Continue</Text>
+              <Text style={{ color: purchaseDisabled ? '#9ca3af' : '#fff', fontWeight: '800' }}>Continue</Text>
             </TouchableOpacity>
             {/* Restore Purchases link */}
             <TouchableOpacity
@@ -217,8 +212,8 @@ export default function PaywallScreen() {
                 <Text style={{ fontSize: 11, color: '#6b7280' }}>Logout</Text>
               </TouchableOpacity>
               <Text style={{ marginHorizontal: 10, color: '#9ca3af' }}>|</Text>
-              <TouchableOpacity onPress={() => Linking.openURL('https://decorly.app/terms')} accessibilityRole="link">
-                <Text style={{ fontSize: 11, color: '#6b7280' }}>Terms</Text>
+              <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')} accessibilityRole="link">
+                <Text style={{ fontSize: 11, color: '#6b7280' }}>EULA</Text>
               </TouchableOpacity>
             </View>
           </View>

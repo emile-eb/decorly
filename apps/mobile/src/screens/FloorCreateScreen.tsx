@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
@@ -8,11 +8,12 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSessionGate } from '../lib/session';
 import { compressImage, uploadToInputs } from '../lib/upload';
 import { createJob } from '../lib/api';
+import PhotoGuideModal from '../components/PhotoGuideModal';
 
 export default function FloorCreateScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
-  const title = route.params?.title || 'Floor Redesign';
+  const title = route.params?.title || 'New Floor';
   const mode = 'floor';
   const { userId } = useSessionGate();
 
@@ -20,6 +21,11 @@ export default function FloorCreateScreen() {
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
   const [floorType, setFloorType] = useState<string | null>(null);
+  const [floorCategory, setFloorCategory] = useState<string | null>(null);
+  const [floorVariant, setFloorVariant] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const initialImageUri = route.params?.initialImageUri as string | undefined;
+  const startStep = route.params?.startStep as number | undefined;
 
   const floorOptions = useMemo(
     () => [
@@ -62,13 +68,13 @@ export default function FloorCreateScreen() {
       'Vintage Persian': require('../../assets/Floor Redesign Persian Rug.png'),
       'Modern Geometric': require('../../assets/Floor Redesign Geometric Rug.png'),
       'Moroccan Diamond': require('../../assets/Floor Redesign Moroccan Rug.png'),
-      'Abtract Modern': require('../../assets/Floor Redesign Abtract Rug.png'),
-      'jute': require('../../assets/Floor Redesign Jute Rug.png'),
+      'Abstract Modern': require('../../assets/Floor Redesign Abtract Rug.png'),
+      'Jute': require('../../assets/Floor Redesign Jute Rug.png'),
       'Shag': require('../../assets/Floor Redesign Shag Rug.png'),
-      'Stripped': require('../../assets/Floor Redesign Stripped Rug.png'),
+      'Striped': require('../../assets/Floor Redesign Stripped Rug.png'),
       // Specific tile/stone variants (thumbnails)
       'White Ceramic': require('../../assets/Floor Redesign White Ceramic Tile.png'),
-      'Grey Porcelian': require('../../assets/Floor Redesign Porcelain Tile.png'),
+      'Grey Porcelain': require('../../assets/Floor Redesign Porcelain Tile.png'),
       'Beige Tile': require('../../assets/Floor Redesign Beige Tile.png'),
       'Marble': require('../../assets/Floor Redesign Marble Tile.png'),
       'Travertine': require('../../assets/Floor Redesign Travertine Tile.png'),
@@ -90,7 +96,7 @@ export default function FloorCreateScreen() {
       'Chestnut': require('../../assets/Floor Redesign Chestnut Wood.png'),
       'Black': require('../../assets/Floor Redesign Black Wood.png'),
       'Bleached': require('../../assets/Floor Redesign Bleached Wood.png'),
-      'Expresso': require('../../assets/Floor Redesign Expersso Wood.png'),
+      'Espresso': require('../../assets/Floor Redesign Expersso Wood.png'),
       'Greige': require('../../assets/Floor Redesign Greige Wood.png'),
       'Grey': require('../../assets/Floor Redesign Grey Wood.png')
     }) as Record<string, any>,
@@ -103,15 +109,11 @@ export default function FloorCreateScreen() {
       [
         {
           label: 'Wood',
-          variants: ['Natural', 'Light Blonde', 'Golden Oak', 'Warm Oak', 'Medium Brown', 'Chestnut', 'Expresso', 'Grey', 'Griege', 'Bleached', 'Black']
+          variants: ['Natural', 'Light Blonde', 'Golden Oak', 'Warm Oak', 'Medium Brown', 'Chestnut', 'Espresso', 'Grey', 'Greige', 'Bleached', 'Black']
         },
         {
           label: 'Tile & Stone',
-          variants: ['White Ceramic', 'Grey Porcelian', 'Beige Tile', 'Marble', 'Travertine', 'Slate', 'Terrazzo', 'Moroccan']
-        },
-        {
-          label: 'Concrete',
-          variants: ['Concrete - Light', 'Concrete - Medium', 'Concrete - Charcoal']
+          variants: ['White Ceramic', 'Grey Porcelain', 'Beige Tile', 'Marble', 'Travertine', 'Slate', 'Terrazzo', 'Moroccan']
         },
         {
           label: 'Carpet',
@@ -119,16 +121,17 @@ export default function FloorCreateScreen() {
         },
         {
           label: 'Rugs',
-          variants: ['Solid Light', 'Solid Dark', 'Tan', 'Grey', 'Vintage Persian', 'Modern Geometric', 'Moroccan Diamond', 'Abtract Modern', 'jute', 'Shag', 'Stripped']
+          variants: ['Solid Light', 'Solid Dark', 'Tan', 'Grey', 'Vintage Persian', 'Modern Geometric', 'Moroccan Diamond', 'Abstract Modern', 'Jute', 'Shag', 'Striped']
         }
       ] as { label: string; variants: string[] }[]
     ),
     []
   );
 
-  const getVariantImage = (variant: string) => {
+  const getVariantImage = (variant: string, rowLabel?: string) => {
     // Map variant to nearest base image
-    // Prefer specific floor images first (so 'Black' carpet doesn't use black wood)
+    if (rowLabel === 'Wood' && woodVariantImages[variant]) return woodVariantImages[variant];
+    // Prefer specific floor images first for non-wood rows (so 'Black' carpet doesn't use black wood)
     if (floorImages[variant]) return floorImages[variant];
     if (woodVariantImages[variant]) return woodVariantImages[variant];
     // Wood mapping
@@ -150,6 +153,14 @@ export default function FloorCreateScreen() {
     if (step <= 1) nav.navigate('Home');
     else setStep(step - 1);
   };
+  const handleExit = () => {
+    nav.navigate('Home');
+  };
+
+  useEffect(() => {
+    if (initialImageUri && !localUri) setLocalUri(initialImageUri);
+    if (typeof startStep === 'number' && startStep > 1 && step === 1) setStep(startStep);
+  }, [initialImageUri, startStep, localUri, step]);
 
   // Interior example photos (reuse)
   const interiorExampleModules = useMemo(
@@ -197,7 +208,16 @@ export default function FloorCreateScreen() {
 
   const renderStep1 = () => (
     <View style={{ flex: 1, marginTop: 8 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Upload Photo</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: '600' }}>Upload Photo</Text>
+        <TouchableOpacity
+          onPress={() => setShowGuide(true)}
+          style={{ backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#111827', flexDirection: 'row', alignItems: 'center' }}
+        >
+          <Ionicons name="information-circle-outline" size={16} color="#111827" />
+          <Text style={{ marginLeft: 6, color: '#111827', fontWeight: '600' }}>Photo tips</Text>
+        </TouchableOpacity>
+      </View>
       <View
         style={{
           width: '100%',
@@ -257,13 +277,18 @@ export default function FloorCreateScreen() {
             <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 8 }}>{row.label}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4 }}>
               {row.variants.map((v) => {
-                const active = floorType === v;
-                const img = getVariantImage(v);
+                const active = floorCategory === row.label && floorVariant === v;
+                const img = getVariantImage(v, row.label);
                 const label = v.includes('-') ? v.split('-').slice(1).join('-').trim() : v;
                 return (
                   <TouchableOpacity
                     key={v}
-                    onPress={() => setFloorType(v)}
+                    onPress={() => {
+                      const baseLabel = row.label === 'Rugs' ? 'Rug' : row.label === 'Tile & Stone' ? 'Tile/Stone' : row.label;
+                      setFloorCategory(row.label);
+                      setFloorVariant(v);
+                      setFloorType(`${baseLabel} - ${label}`);
+                    }}
                     style={{ width: 120, marginRight: 10 }}
                   >
                     <View style={{ width: 120, height: 120, borderRadius: 12, overflow: 'hidden', borderWidth: active ? 2 : 1, borderColor: active ? '#111827' : '#e5e7eb' }}>
@@ -339,7 +364,13 @@ export default function FloorCreateScreen() {
           <Ionicons name="chevron-back" size={22} color="#111827" />
         </TouchableOpacity>
         <Text style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700' }}>{title}</Text>
-        <View style={{ width: 32, height: 32, marginLeft: 8 }} />
+        <TouchableOpacity
+          onPress={handleExit}
+          accessibilityRole="button"
+          style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginLeft: 8 }}
+        >
+          <Ionicons name="close" size={20} color="#111827" />
+        </TouchableOpacity>
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
@@ -351,6 +382,7 @@ export default function FloorCreateScreen() {
       {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
       {step === 3 && renderStep3()}
+      <PhotoGuideModal visible={showGuide} onClose={() => setShowGuide(false)} />
       </View>
     </SafeAreaView>
   );

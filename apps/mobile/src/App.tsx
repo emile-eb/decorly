@@ -3,7 +3,6 @@ import { Text, TouchableOpacity, View, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import InteriorCreateScreen from './screens/InteriorCreateScreen';
 import GardenCreateScreen from './screens/GardenCreateScreen';
@@ -11,6 +10,7 @@ import FloorCreateScreen from './screens/FloorCreateScreen';
 import PaintCreateScreen from './screens/PaintCreateScreen';
 import ReplaceCreateScreen from './screens/ReplaceCreateScreen';
 import DeclutterCreateScreen from './screens/DeclutterCreateScreen';
+import CustomCreateScreen from './screens/CustomCreateScreen';
 import DiscoverScreen from './screens/DiscoverScreen';
 import DiscoverFeedScreen from './screens/DiscoverFeedScreen';
 import UploadScreen from './screens/UploadScreen';
@@ -29,6 +29,8 @@ import { BottomIslandContext } from './lib/island';
 import { TabContext, Tab } from './lib/tabs';
 import SplashOverlay from './components/SplashOverlay';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { wakeApi } from './lib/api';
+import { initMeta } from './lib/meta';
 
 const Stack = createNativeStackNavigator();
 
@@ -140,6 +142,15 @@ function ExploreStackNavigator() {
         }}
       />
       <ExploreStack.Screen
+        name="CustomCreate"
+        component={CustomCreateScreen}
+        options={{ headerShown: false }}
+        listeners={{
+          focus: () => islandCtx?.setVisible(false),
+          blur: () => islandCtx?.setVisible(true)
+        }}
+      />
+      <ExploreStack.Screen
         name="DeclutterCreate"
         component={DeclutterCreateScreen}
         options={{ headerShown: false }}
@@ -152,7 +163,7 @@ function ExploreStackNavigator() {
       <ExploreStack.Screen
         name="Progress"
         component={ProgressScreen}
-        options={{ title: 'Progress' }}
+        options={{ title: '' }}
         listeners={{
           focus: () => islandCtx?.setVisible(false),
           blur: () => islandCtx?.setVisible(true)
@@ -202,6 +213,7 @@ function ExploreStackNavigator() {
           title: 'Settings',
           headerTitleAlign: 'center',
           headerTitleStyle: { fontWeight: '700' },
+          contentStyle: { paddingTop: 0, backgroundColor: '#ffffff' },
           headerLeft: () => (
             <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" style={{ paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 }}>
               <Ionicons name="chevron-back" size={22} color="#000" />
@@ -268,6 +280,7 @@ function ProfileStackNavigator() {
           title: 'Settings',
           headerTitleAlign: 'center',
           headerTitleStyle: { fontWeight: '700' },
+          contentStyle: { paddingTop: 0, backgroundColor: '#ffffff' },
           headerLeft: () => (
             <TouchableOpacity onPress={() => navigation.goBack()} accessibilityRole="button" style={{ paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 }}>
               <Ionicons name="chevron-back" size={22} color="#000" />
@@ -301,6 +314,60 @@ function ProfileStackNavigator() {
         name="PreviewResults"
         component={PreviewResultsScreen}
         options={{ title: 'Results Preview' }}
+        listeners={{
+          focus: () => islandCtx?.setVisible(false),
+          blur: () => islandCtx?.setVisible(true)
+        }}
+      />
+      <PStack.Screen
+        name="Results"
+        component={ResultsScreen}
+        options={{ title: 'Results' }}
+        listeners={{
+          focus: () => islandCtx?.setVisible(false),
+          blur: () => islandCtx?.setVisible(true)
+        }}
+      />
+      <PStack.Screen
+        name="InteriorCreate"
+        component={InteriorCreateScreen}
+        options={{ headerShown: false }}
+        listeners={{
+          focus: () => islandCtx?.setVisible(false),
+          blur: () => islandCtx?.setVisible(true)
+        }}
+      />
+      <PStack.Screen
+        name="PaintCreate"
+        component={PaintCreateScreen}
+        options={{ headerShown: false }}
+        listeners={{
+          focus: () => islandCtx?.setVisible(false),
+          blur: () => islandCtx?.setVisible(true)
+        }}
+      />
+      <PStack.Screen
+        name="FloorCreate"
+        component={FloorCreateScreen}
+        options={{ headerShown: false }}
+        listeners={{
+          focus: () => islandCtx?.setVisible(false),
+          blur: () => islandCtx?.setVisible(true)
+        }}
+      />
+      <PStack.Screen
+        name="ReplaceCreate"
+        component={ReplaceCreateScreen}
+        options={{ headerShown: false }}
+        listeners={{
+          focus: () => islandCtx?.setVisible(false),
+          blur: () => islandCtx?.setVisible(true)
+        }}
+      />
+      <PStack.Screen
+        name="CustomCreate"
+        component={CustomCreateScreen}
+        options={{ headerShown: false }}
         listeners={{
           focus: () => islandCtx?.setVisible(false),
           blur: () => islandCtx?.setVisible(true)
@@ -368,15 +435,10 @@ function Tabs() {
 }
 
 function RootNavigator() {
-  const { session } = useSessionGate();
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {!session ? (
-          <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
-        ) : (
-          <Stack.Screen name="Root" component={Tabs} options={{ headerShown: false }} />
-        )}
+        <Stack.Screen name="Root" component={Tabs} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -387,6 +449,13 @@ export default function App() {
   React.useEffect(() => {
     const t = setTimeout(() => setShowSplash(false), 1400);
     return () => clearTimeout(t);
+  }, []);
+  // Warm the API once on launch to reduce cold start impact
+  React.useEffect(() => {
+    wakeApi();
+  }, []);
+  React.useEffect(() => {
+    initMeta();
   }, []);
   return (
     <SafeAreaProvider>

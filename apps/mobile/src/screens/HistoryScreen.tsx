@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, RefreshControl, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTabs } from '../lib/tabs';
 import Toggle from '../components/Toggle';
 import * as SecureStore from 'expo-secure-store';
 import { listJobs, getJob } from '../lib/api';
+import { getHistoryCache, setHistoryCache } from '../lib/historyCache';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 type Job = {
@@ -40,7 +41,11 @@ export default function HistoryScreen() {
           if (uri) map[first[idx].id] = uri;
         }
       });
-      setThumbs((prev) => ({ ...prev, ...map }));
+      setThumbs((prev) => {
+        const next = { ...prev, ...map };
+        setHistoryCache(jobs, next);
+        return next;
+      });
     } catch {
       // ignore
     }
@@ -48,6 +53,12 @@ export default function HistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const cache = getHistoryCache();
+      if (cache.items.length) {
+        setItems(cache.items as Job[]);
+        setThumbs(cache.thumbs);
+        return;
+      }
       load();
     }, [load])
   );
@@ -77,11 +88,13 @@ export default function HistoryScreen() {
 
   const open = async (id: string) => {
     const job = await getJob(id);
-    nav.navigate('Results', { job });
+    nav.navigate('Results', { job, showCongrats: false });
   };
 
-  const statusColor = (s: string) =>
-    s === 'complete' ? '#10b981' : s === 'failed' ? '#ef4444' : s === 'processing' ? '#f59e0b' : '#6b7280';
+  const screenWidth = Dimensions.get('window').width;
+  const gridGutter = 12;
+  const gridPadding = 16;
+  const itemWidth = (screenWidth - gridPadding * 2 - gridGutter) / 2;
 
   const Empty = () => (
     <View
@@ -142,44 +155,26 @@ export default function HistoryScreen() {
         </View>
       </View>
 
-      <View style={{ flex: 1, paddingTop: 30, paddingBottom: 16, paddingHorizontal: 16 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, marginBottom: 8 }}>
-        <Text style={{ color: '#6b7280' }}>Auto save to gallery</Text>
-        <Toggle value={autoSave} onValueChange={() => toggleAutoSave()} />
-      </View>
+      <View style={{ flex: 1, paddingTop: 20, paddingBottom: 16, paddingHorizontal: gridPadding }}>
       <FlatList
         showsVerticalScrollIndicator={false}
         data={items}
         keyExtractor={(i) => i.id}
         numColumns={2}
-        columnWrapperStyle={{ gap: 12 }}
+        columnWrapperStyle={{ gap: gridGutter }}
         contentContainerStyle={{ paddingBottom: 16 }}
         ListEmptyComponent={<Empty />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => {
           const thumb = thumbs[item.id];
-          const created = new Date(item.created_at);
           return (
-            <TouchableOpacity onPress={() => open(item.id)} style={{ width: '48%', marginBottom: 12 }}>
-              <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff' }}>
+            <TouchableOpacity onPress={() => open(item.id)} style={{ width: itemWidth, marginBottom: gridGutter }}>
+              <View style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: '#f3f4f6' }}>
                 {thumb ? (
-                  <Image source={{ uri: thumb }} style={{ width: '100%', height: 120 }} resizeMode="cover" />
+                  <Image source={{ uri: thumb }} style={{ width: '100%', height: itemWidth * 1.3 }} resizeMode="cover" />
                 ) : (
-                  <View style={{ width: '100%', height: 120, backgroundColor: '#f3f4f6' }} />
+                  <View style={{ width: '100%', height: itemWidth * 1.3, backgroundColor: '#f3f4f6' }} />
                 )}
-                <View style={{ padding: 8 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 12, color: '#111827', fontWeight: '700' }} numberOfLines={1}>
-                      {item.style || '—'}
-                    </Text>
-                    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: statusColor(item.status) }}>
-                      <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700', textTransform: 'capitalize' }}>{item.status}</Text>
-                    </View>
-                  </View>
-                  <Text style={{ marginTop: 4, color: '#6b7280', fontSize: 11 }} numberOfLines={1}>
-                    {created.toLocaleDateString()} {created.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                </View>
               </View>
             </TouchableOpacity>
           );

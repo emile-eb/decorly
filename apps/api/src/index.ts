@@ -12,7 +12,8 @@ config({ override: process.env.NODE_ENV !== 'production' })
 const env = loadEnv();
 
 const app = Fastify({
-  logger: true
+  logger: true,
+  bodyLimit: 25 * 1024 * 1024
 });
 
 await app.register(cors, { origin: true });

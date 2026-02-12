@@ -19,7 +19,11 @@ export default function StyleScreen() {
       nav.navigate('Progress', { jobId });
     } catch (e: any) {
       console.error('[ui] StyleScreen submit error', e);
-      Alert.alert('Job creation failed', e.message);
+      if (e?.statusCode === 402) {
+        nav.navigate('Paywall');
+      } else {
+        Alert.alert('Job creation failed', e.message);
+      }
     }
   };
 

@@ -27,7 +27,7 @@ const DATA: CardItem[] = [
   },
   {
     key: 'floor',
-    title: 'Floor Redesign',
+    title: 'New Floor',
     image: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?q=80&w=1600&auto=format&fit=crop',
     mode: 'floor',
     description: 'Try new materials, patterns, and finishes.'
@@ -134,6 +134,8 @@ export default function HomeScreen() {
                   ? nav.navigate('FloorCreate', { mode: item.mode, title: item.title })
                   : item.mode === 'replace'
                   ? nav.navigate('ReplaceCreate', { mode: item.mode, title: item.title })
+                  : item.mode === 'custom'
+                  ? nav.navigate('CustomCreate', { mode: item.mode, title: item.title })
                   : item.mode === 'declutter'
                   ? nav.navigate('DeclutterCreate', { mode: item.mode, title: item.title })
                   : nav.navigate('InteriorCreate', { mode: item.mode, title: item.title })

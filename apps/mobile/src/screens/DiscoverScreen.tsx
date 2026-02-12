@@ -1,13 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, Image } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, View, Text, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function DiscoverScreen() {
   const nav = useNavigation<any>();
-  const [query, setQuery] = useState('');
-
   const interiorSubs = [
     'Living Room',
     'Bedroom',
@@ -21,14 +19,11 @@ export default function DiscoverScreen() {
     'Kids Room',
     'Attic',
     'Basement',
-    'Home Theatre'
+    'Home Theater'
   ];
 
   const gardenSubs = ['Front Yard', 'Backyard', 'Side Yard', 'Courtyard', 'Patio'];
 
-  const q = query.trim().toLowerCase();
-  const filteredInterior = useMemo(() => interiorSubs.filter((s) => s.toLowerCase().includes(q)), [q]);
-  const filteredGarden = useMemo(() => gardenSubs.filter((s) => s.toLowerCase().includes(q)), [q]);
 
   // Thumbnail sources from local assets
   const interiorExamples = [
@@ -59,7 +54,7 @@ export default function DiscoverScreen() {
     'Home Office': require('../../assets/Home Office Discover.webp'),
     'Kids Room': require('../../assets/Kids Room Discover.jpg'),
     // Note: file named "Home Theartre Discover.webp" (typo in filename)
-    'Home Theatre': require('../../assets/Home Theartre Discover.webp')
+    'Home Theater': require('../../assets/Home Theartre Discover.webp')
   };
   const gardenDiscoverThumbs: Record<string, any> = {
     'Front Yard': require('../../assets/Front Yard Discover.jpg'),
@@ -75,15 +70,10 @@ export default function DiscoverScreen() {
     return arr[code % arr.length];
   }
 
-  const SubCard = ({ label, source, onPress }: { label: string; source: any; onPress?: () => void }) => (
+  const PhotoTile = ({ source, onPress }: { source: any; onPress?: () => void }) => (
     <TouchableOpacity onPress={onPress} style={{ width: '48%', marginBottom: 12 }}>
       <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff' }}>
-        <Image source={source} style={{ width: '100%', height: 96 }} resizeMode="cover" />
-        <View style={{ padding: 10 }}>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }} numberOfLines={1}>
-            {label}
-          </Text>
-        </View>
+        <Image source={source} style={{ width: '100%', height: 140 }} resizeMode="cover" />
       </View>
     </TouchableOpacity>
   );
@@ -104,29 +94,15 @@ export default function DiscoverScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: '#111827' }}>Discover</Text>
           <Text style={{ marginTop: 4, color: '#6b7280' }}>Get inspiration for your home</Text>
-          {/* Search */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, paddingHorizontal: 10, backgroundColor: '#ffffff' }}>
-            <Ionicons name="search" size={16} color="#6b7280" />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search rooms, spaces, or ideas"
-              placeholderTextColor="#9ca3af"
-              style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 8 }}
-              autoCapitalize="none"
-              returnKeyType="search"
-            />
-          </View>
         </View>
       </SafeAreaView>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: 0, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
       <Section title="Interior" subtitle="Browse rooms and find styles you love">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-          {(q ? filteredInterior : interiorSubs).map((s) => (
-            <SubCard
+          {interiorSubs.map((s) => (
+            <PhotoTile
               key={s}
-              label={s}
               source={interiorDiscoverThumbs[s] ?? pickFallback(s, interiorExamples)}
               onPress={() => nav.navigate('DiscoverFeed', { category: 'interior', title: s })}
             />
@@ -136,16 +112,15 @@ export default function DiscoverScreen() {
 
       <Section title="Exterior" subtitle="Curb appeal, materials, and facades">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-          <SubCard label="Exterior" source={exteriorThumb} onPress={() => nav.navigate('DiscoverFeed', { category: 'exterior', title: 'Exterior' })} />
+          <PhotoTile source={exteriorThumb} onPress={() => nav.navigate('DiscoverFeed', { category: 'exterior', title: 'Exterior' })} />
         </View>
       </Section>
 
       <Section title="Garden" subtitle="Planting, pathways, seating, and lighting">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-          {(q ? filteredGarden : gardenSubs).map((s) => (
-            <SubCard
+          {gardenSubs.map((s) => (
+            <PhotoTile
               key={s}
-              label={s}
               source={gardenDiscoverThumbs[s] ?? pickFallback(s, gardenExamples)}
               onPress={() => nav.navigate('DiscoverFeed', { category: 'garden', title: s })}
             />

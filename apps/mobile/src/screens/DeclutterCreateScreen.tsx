@@ -7,13 +7,18 @@ import { useNavigation } from '@react-navigation/native';
 import { useSessionGate } from '../lib/session';
 import { compressImage, uploadToInputs } from '../lib/upload';
 import { createJob } from '../lib/api';
+import PhotoGuideModal from '../components/PhotoGuideModal';
 
 export default function DeclutterCreateScreen() {
   const nav = useNavigation<any>();
   const { userId } = useSessionGate();
+  const handleExit = () => {
+    nav.navigate('Home');
+  };
   const [step, setStep] = useState<number>(1);
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -70,12 +75,27 @@ export default function DeclutterCreateScreen() {
             <Ionicons name="chevron-back" size={22} color="#111827" />
           </TouchableOpacity>
           <Text style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700' }}>Declutter</Text>
-          <View style={{ width: 32, height: 32, marginLeft: 8 }} />
+          <TouchableOpacity
+            onPress={handleExit}
+            accessibilityRole="button"
+            style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginLeft: 8 }}
+          >
+            <Ionicons name="close" size={20} color="#111827" />
+          </TouchableOpacity>
         </View>
 
         {step === 1 && (
           <View style={{ flex: 1, marginTop: 8 }}>
-            <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Add Photo</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 18, fontWeight: '600' }}>Add Photo</Text>
+              <TouchableOpacity
+                onPress={() => setShowGuide(true)}
+                style={{ backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#111827', flexDirection: 'row', alignItems: 'center' }}
+              >
+                <Ionicons name="information-circle-outline" size={16} color="#111827" />
+                <Text style={{ marginLeft: 6, color: '#111827', fontWeight: '600' }}>Photo tips</Text>
+              </TouchableOpacity>
+            </View>
             <View
               style={{
                 width: '100%',
@@ -132,6 +152,7 @@ export default function DeclutterCreateScreen() {
             </TouchableOpacity>
           </View>
         )}
+        <PhotoGuideModal visible={showGuide} onClose={() => setShowGuide(false)} />
       </View>
     </SafeAreaView>
   );

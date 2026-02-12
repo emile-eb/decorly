@@ -8,6 +8,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSessionGate } from '../lib/session';
 import { compressImage, uploadToInputs } from '../lib/upload';
 import { createJob } from '../lib/api';
+import PhotoGuideModal from '../components/PhotoGuideModal';
 
 type Palette = { label: string; colors: string[] };
 
@@ -27,6 +28,9 @@ export default function InteriorCreateScreen() {
   const [customStyle, setCustomStyle] = useState<string>('');
   const [customOverlayOpen, setCustomOverlayOpen] = useState<boolean>(false);
   const [palette, setPalette] = useState<Palette | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const initialImageUri = route.params?.initialImageUri as string | undefined;
+  const startStep = route.params?.startStep as number | undefined;
 
   // Example images: use local interior examples for interior flow; keep remote placeholders for exterior
   const interiorExampleModules = useMemo(
@@ -221,6 +225,10 @@ const palettes = useMemo<Palette[]>(
       await ImagePicker.requestCameraPermissionsAsync();
     })();
   }, []);
+  useEffect(() => {
+    if (initialImageUri && !localUri) setLocalUri(initialImageUri);
+    if (typeof startStep === 'number' && startStep > 1 && step === 1) setStep(startStep);
+  }, [initialImageUri, startStep, localUri, step]);
 
   const pickImage = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
@@ -281,7 +289,16 @@ const palettes = useMemo<Palette[]>(
 
   const renderStep1 = () => (
     <View style={{ flex: 1, marginTop: 8 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Add Photo</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: '600' }}>Add Photo</Text>
+        <TouchableOpacity
+          onPress={() => setShowGuide(true)}
+          style={{ backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#111827', flexDirection: 'row', alignItems: 'center' }}
+        >
+          <Ionicons name="information-circle-outline" size={16} color="#111827" />
+          <Text style={{ marginLeft: 6, color: '#111827', fontWeight: '600' }}>Photo tips</Text>
+        </TouchableOpacity>
+      </View>
       <View
         style={{
           width: '100%',
@@ -600,25 +617,21 @@ const palettes = useMemo<Palette[]>(
             <Ionicons name="chevron-back" size={22} color="#111827" />
           </TouchableOpacity>
           <Text style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700' }}>{title}</Text>
-          {(step === 2 || step === 3 || step === 4 || step === 5) ? (
-            <TouchableOpacity
-              onPress={handleExit}
-              accessibilityRole="button"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 999,
-                backgroundColor: '#f3f4f6',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginLeft: 8
-              }}
-            >
-              <Ionicons name="close" size={20} color="#111827" />
-            </TouchableOpacity>
-          ) : (
-            <View style={{ width: 32 }} />
-          )}
+          <TouchableOpacity
+            onPress={handleExit}
+            accessibilityRole="button"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 999,
+              backgroundColor: '#f3f4f6',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: 8
+            }}
+          >
+            <Ionicons name="close" size={20} color="#111827" />
+          </TouchableOpacity>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
           {Array.from({ length: segmentsCount }).map((_, idx) => (
@@ -640,6 +653,7 @@ const palettes = useMemo<Palette[]>(
       {step === 3 && renderStep3()}
       {step === 4 && renderStep4()}
       {step === 5 && renderStep5()}
+      <PhotoGuideModal visible={showGuide} onClose={() => setShowGuide(false)} />
       </View>
     </SafeAreaView>
   );

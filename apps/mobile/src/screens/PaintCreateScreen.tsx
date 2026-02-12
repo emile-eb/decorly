@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
@@ -8,6 +8,7 @@ import { useSessionGate } from '../lib/session';
 import { compressImage, uploadToInputs } from '../lib/upload';
 import { createJob } from '../lib/api';
 import { Ionicons } from '@expo/vector-icons';
+import PhotoGuideModal from '../components/PhotoGuideModal';
 
 type Palette = { label: string; colors: string[] };
 
@@ -21,6 +22,9 @@ export default function PaintCreateScreen() {
   const [step, setStep] = useState<number>(1);
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const initialImageUri = route.params?.initialImageUri as string | undefined;
+  const startStep = route.params?.startStep as number | undefined;
 
   // Current conditions
   const roomTypes = useMemo(() => ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dining', 'Office', 'Entryway'], []);
@@ -143,6 +147,14 @@ export default function PaintCreateScreen() {
     if (step <= 1) nav.navigate('Home');
     else setStep(step - 1);
   };
+  const handleExit = () => {
+    nav.navigate('Home');
+  };
+
+  useEffect(() => {
+    if (initialImageUri && !localUri) setLocalUri(initialImageUri);
+    if (typeof startStep === 'number' && startStep > 1 && step === 1) setStep(startStep);
+  }, [initialImageUri, startStep, localUri, step]);
 
   const pickImage = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
@@ -172,7 +184,16 @@ export default function PaintCreateScreen() {
 
   const renderStep1 = () => (
     <View style={{ flex: 1, marginTop: 8 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Upload Photo</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: '600' }}>Upload Photo</Text>
+        <TouchableOpacity
+          onPress={() => setShowGuide(true)}
+          style={{ backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#111827', flexDirection: 'row', alignItems: 'center' }}
+        >
+          <Ionicons name="information-circle-outline" size={16} color="#111827" />
+          <Text style={{ marginLeft: 6, color: '#111827', fontWeight: '600' }}>Photo tips</Text>
+        </TouchableOpacity>
+      </View>
       <View style={{ width: '100%', aspectRatio: 0.9, borderWidth: 2, borderStyle: 'dashed', borderColor: '#e5e7eb', backgroundColor: '#f9fafb', borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         {localUri ? (
           <Image source={{ uri: localUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -373,7 +394,13 @@ export default function PaintCreateScreen() {
           <Ionicons name="chevron-back" size={22} color="#111827" />
         </TouchableOpacity>
         <Text style={{ flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700' }}>{title}</Text>
-        <View style={{ width: 32, height: 32, marginLeft: 8 }} />
+        <TouchableOpacity
+          onPress={handleExit}
+          accessibilityRole="button"
+          style={{ width: 32, height: 32, borderRadius: 999, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginLeft: 8 }}
+        >
+          <Ionicons name="close" size={20} color="#111827" />
+        </TouchableOpacity>
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
@@ -385,6 +412,7 @@ export default function PaintCreateScreen() {
       {step === 1 && renderStep1()}
       {step === 2 && renderStep3()}
       {step === 3 && renderStep4()}
+      <PhotoGuideModal visible={showGuide} onClose={() => setShowGuide(false)} />
       </View>
     </SafeAreaView>
   );

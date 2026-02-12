@@ -16,14 +16,27 @@ export default ({ config }: any) => ({
     backgroundColor: '#ffffff'
   },
   ios: {
-    supportsTablet: true,
     bundleIdentifier: 'com.decorly.app',
-    buildNumber: '28',
+    buildNumber: '66',
     icon: './assets/App Logo.png',
     infoPlist: {
       NSCameraUsageDescription: 'Used to capture room photos for redesigns.',
       NSPhotoLibraryAddUsageDescription: 'Saves redesigned images to your photo library.',
       NSPhotoLibraryUsageDescription: 'Allows selecting photos from your library for redesigns.',
+      NSUserTrackingUsageDescription: 'Allow tracking to measure and improve ad performance.',
+      FacebookAppID: '756211593884193',
+      FacebookClientToken: 'c7541959cb2775a0b91e3c6a892fb4d2',
+      FacebookDisplayName: 'Decorly',
+      LSApplicationQueriesSchemes: ['fbapi', 'fb-messenger-share-api', 'fbauth2', 'fbshareextension'],
+      CFBundleURLTypes: [
+        {
+          CFBundleURLSchemes: ['fb756211593884193']
+        }
+      ],
+      SKAdNetworkItems: [
+        { SKAdNetworkIdentifier: 'v9wttpbfk9.skadnetwork' },
+        { SKAdNetworkIdentifier: 'n38lu8286q.skadnetwork' }
+      ],
       ITSAppUsesNonExemptEncryption: false
     }
   },
@@ -37,6 +50,9 @@ export default ({ config }: any) => ({
     API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:4000',
     REVENUECAT_PUBLIC_SDK_KEY: 'appl_hVluoMtIVjQADTUPsEFPTiyZPwT',
     REVENUECAT_PUBLIC_SDK_KEY_IOS: 'appl_hVluoMtIVjQADTUPsEFPTiyZPwT',
+    META_APP_ID: '756211593884193',
+    META_CLIENT_TOKEN: 'c7541959cb2775a0b91e3c6a892fb4d2',
+    META_DISPLAY_NAME: 'Decorly',
     eas: {
       projectId: '082ebae8-7b08-4de4-8f68-c329fc5d5502'
     }

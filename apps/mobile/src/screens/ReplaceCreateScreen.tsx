@@ -9,6 +9,7 @@ import { useSessionGate } from '../lib/session';
 import { compressImage, uploadToInputs } from '../lib/upload';
 import { createJob } from '../lib/api';
 import Svg, { Path } from 'react-native-svg';
+import PhotoGuideModal from '../components/PhotoGuideModal';
 
 type Point = { x: number; y: number; r: number; mode: 'draw' };
 type Stroke = { radius: number; points: { x: number; y: number }[] };
@@ -25,6 +26,7 @@ export default function ReplaceCreateScreen() {
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
   const [descText, setDescText] = useState<string>("");
   const [refObjectUri, setRefObjectUri] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Brush state
   const [brushSize, setBrushSize] = useState<number>(32);
@@ -151,20 +153,32 @@ export default function ReplaceCreateScreen() {
 
   const renderStep1 = () => (
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }} style={{ flex: 1, marginTop: 8 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Upload Photo</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: '600' }}>Upload Photo</Text>
+        <TouchableOpacity
+          onPress={() => setShowGuide(true)}
+          style={{ backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#111827', flexDirection: 'row', alignItems: 'center' }}
+        >
+          <Ionicons name="information-circle-outline" size={16} color="#111827" />
+          <Text style={{ marginLeft: 6, color: '#111827', fontWeight: '600' }}>Photo tips</Text>
+        </TouchableOpacity>
+      </View>
       <View style={{ width: '100%', aspectRatio: 0.9, borderWidth: 2, borderStyle: 'dashed', borderColor: '#e5e7eb', backgroundColor: '#f9fafb', borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         {localUri ? (
           <Image source={{ uri: localUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <TouchableOpacity onPress={takePhoto} style={{ backgroundColor: '#111827', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, minWidth: 180, alignItems: 'center' }}>
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Take a photo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={pickImage} style={{ backgroundColor: '#111827', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, minWidth: 180, alignItems: 'center', marginTop: 10 }}>
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Choose from gallery</Text>
-            </TouchableOpacity>
+            <Text style={{ color: '#6b7280', fontWeight: '600' }}>No photo selected</Text>
           </View>
         )}
+      </View>
+      <View style={{ marginTop: 12, alignItems: 'center' }}>
+        <TouchableOpacity onPress={takePhoto} style={{ backgroundColor: '#111827', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, minWidth: 180, alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>Take a photo</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={pickImage} style={{ backgroundColor: '#111827', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, minWidth: 180, alignItems: 'center', marginTop: 10 }}>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>Choose from gallery</Text>
+        </TouchableOpacity>
       </View>
       <View style={{ height: 16 }} />
       <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Example Photos</Text>
@@ -416,6 +430,7 @@ export default function ReplaceCreateScreen() {
           {step === 3 && renderStep3()}
           {step === 4 && renderStep4()}
         </View>
+        <PhotoGuideModal visible={showGuide} onClose={() => setShowGuide(false)} />
       </View>
     </SafeAreaView>
   );
