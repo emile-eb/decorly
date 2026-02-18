@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView, LayoutChangeEvent, PanResponder, GestureResponderEvent, PanResponderGestureState, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
@@ -27,6 +27,7 @@ export default function ReplaceCreateScreen() {
   const [descText, setDescText] = useState<string>("");
   const [refObjectUri, setRefObjectUri] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [safeReplaceExampleUri, setSafeReplaceExampleUri] = useState<string | null>(null);
 
   // Brush state
   const [brushSize, setBrushSize] = useState<number>(32);
@@ -53,6 +54,25 @@ export default function ReplaceCreateScreen() {
   );
   const examplePhotos = useMemo(() => interiorExampleModules.map((m) => Asset.fromModule(m).uri), [interiorExampleModules]);
   const replaceExampleUri = useMemo(() => Asset.fromModule(require('../../assets/Replace Object Example.jpg')).uri, []);
+
+  const normalizeImageUri = async (uri: string) => {
+    try {
+      return await compressImage(uri);
+    } catch {
+      return uri;
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const normalized = await normalizeImageUri(replaceExampleUri);
+      if (active) setSafeReplaceExampleUri(normalized);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [replaceExampleUri]);
 
   const distance2 = (a: {x:number;y:number}, b:{x:number;y:number}) => {
     const dx = a.x - b.x, dy = a.y - b.y; return dx*dx + dy*dy;
@@ -118,7 +138,10 @@ export default function ReplaceCreateScreen() {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') return Alert.alert('Permission needed', 'Allow photo library access.');
       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
-      if (!res.canceled) setLocalUri(res.assets[0].uri);
+      if (!res.canceled) {
+        const normalized = await normalizeImageUri(res.assets[0].uri);
+        setLocalUri(normalized);
+      }
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Unable to pick image');
     }
@@ -129,7 +152,10 @@ export default function ReplaceCreateScreen() {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') return Alert.alert('Permission needed', 'Allow camera access.');
       const res = await ImagePicker.launchCameraAsync({ quality: 1 });
-      if (!res.canceled) setLocalUri(res.assets[0].uri);
+      if (!res.canceled) {
+        const normalized = await normalizeImageUri(res.assets[0].uri);
+        setLocalUri(normalized);
+      }
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Unable to take photo');
     }
@@ -184,7 +210,13 @@ export default function ReplaceCreateScreen() {
       <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Example Photos</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
         {examplePhotos.map((u, idx) => (
-          <TouchableOpacity key={String(idx)} onPress={() => setLocalUri(u)}>
+          <TouchableOpacity
+            key={String(idx)}
+            onPress={async () => {
+              const normalized = await normalizeImageUri(u);
+              setLocalUri(normalized);
+            }}
+          >
             <Image
               source={{ uri: u }}
               style={{ width: 96, height: 96, borderRadius: 8, marginRight: 10, borderWidth: localUri === u ? 2 : 1, borderColor: localUri === u ? '#111827' : '#e5e7eb' }}
@@ -371,8 +403,8 @@ export default function ReplaceCreateScreen() {
               </View>
             ) : (
               <View style={{ width: '100%', height: 300, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
-                {replaceExampleUri ? (
-                  <Image source={{ uri: replaceExampleUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                {safeReplaceExampleUri ? (
+                  <Image source={{ uri: safeReplaceExampleUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                 ) : (
                   <View style={{ width: '100%', height: '100%', backgroundColor: '#e5e7eb' }} />
                 )}
@@ -382,7 +414,10 @@ export default function ReplaceCreateScreen() {
                       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
                       if (status !== 'granted') return Alert.alert('Permission needed', 'Allow photo library access.');
                       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
-                      if (!res.canceled) setRefObjectUri(res.assets[0].uri);
+                      if (!res.canceled) {
+                        const normalized = await normalizeImageUri(res.assets[0].uri);
+                        setRefObjectUri(normalized);
+                      }
                     } catch (e: any) {
                       Alert.alert('Error', e?.message || 'Unable to pick image');
                     }
