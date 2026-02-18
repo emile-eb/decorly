@@ -1,5 +1,3 @@
-import 'dotenv/config';
-
 // Export a plain Expo config (no nested `expo` key) so EAS/Expo CLI
 // read version/buildNumber correctly in a monorepo.
 export default ({ config }: any) => ({
