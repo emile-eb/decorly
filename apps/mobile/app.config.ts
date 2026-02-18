@@ -5,7 +5,7 @@ export default ({ config }: any) => ({
   name: 'Decorly',
   slug: 'decorly-monorepo',
   scheme: 'decorly',
-  version: '1.0.0',
+  version: '1.0.1',
   orientation: 'portrait',
   icon: './assets/App Logo.png',
   userInterfaceStyle: 'automatic',
@@ -15,7 +15,7 @@ export default ({ config }: any) => ({
   },
   ios: {
     bundleIdentifier: 'com.decorly.app',
-    buildNumber: '66',
+    buildNumber: '67',
     icon: './assets/App Logo.png',
     infoPlist: {
       NSCameraUsageDescription: 'Used to capture room photos for redesigns.',
