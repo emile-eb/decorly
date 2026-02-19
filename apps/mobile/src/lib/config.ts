@@ -1,6 +1,11 @@
 import Constants from 'expo-constants';
 
-const extra = (Constants.expoConfig?.extra || {}) as Record<string, any>;
+const extra = (
+  Constants.expoConfig?.extra ??
+  (Constants as any)?.manifest2?.extra?.expoClient?.extra ??
+  (Constants as any)?.manifest?.extra ??
+  {}
+) as Record<string, any>;
 
 // Fallback to process.env on web
 const SUPABASE_URL = String(extra.SUPABASE_URL ?? (process.env as any)?.SUPABASE_URL ?? '');
