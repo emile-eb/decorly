@@ -12,6 +12,14 @@ async function getFbSdk() {
   }
 }
 
+async function getTrackingTransparency() {
+  try {
+    return await import('expo-tracking-transparency');
+  } catch {
+    return null;
+  }
+}
+
 export async function initMeta() {
   if (initialized) return;
   if (!CONFIG.META_APP_ID || !CONFIG.META_CLIENT_TOKEN) return;
@@ -21,19 +29,23 @@ export async function initMeta() {
     const { Settings, AppEventsLogger } = sdk as any;
     Settings.setAppID(CONFIG.META_APP_ID);
     Settings.setClientToken(CONFIG.META_CLIENT_TOKEN);
+    Settings.initializeSDK();
+    AppEventsLogger.activateApp();
     Settings.setAdvertiserIDCollectionEnabled(true);
 
     if (Platform.OS === 'ios') {
-      try {
-        const { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } = await import('expo-tracking-transparency');
+      const tracking = await getTrackingTransparency();
+      if (tracking) {
+        const { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } = tracking as any;
         const existing = await getTrackingPermissionsAsync();
         const status = existing.status === 'undetermined'
           ? (await requestTrackingPermissionsAsync()).status
           : existing.status;
         Settings.setAdvertiserTrackingEnabled(status === 'granted');
-      } catch {}
+      }
     }
     AppEventsLogger.logEvent('app_open');
+    AppEventsLogger.flush?.();
     initialized = true;
   } catch {}
 }
@@ -44,6 +56,7 @@ export async function trackEvent(name: string, params?: Record<string, any>) {
   try {
     const { AppEventsLogger } = sdk as any;
     AppEventsLogger.logEvent(name, 0, params || {});
+    AppEventsLogger.flush?.();
   } catch {}
 }
 
@@ -53,5 +66,6 @@ export async function trackPurchase(amount: number, currency = 'USD', params?: R
   try {
     const { AppEventsLogger } = sdk as any;
     AppEventsLogger.logPurchase(amount, currency, params || {});
+    AppEventsLogger.flush?.();
   } catch {}
 }

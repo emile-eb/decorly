@@ -6,6 +6,7 @@ export default ({ config }: any) => ({
   slug: 'decorly-monorepo',
   scheme: 'decorly',
   version: '1.0.1',
+  jsEngine: 'jsc',
   orientation: 'portrait',
   icon: './assets/App Logo.png',
   userInterfaceStyle: 'automatic',

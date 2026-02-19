@@ -28,6 +28,7 @@ export default function ReplaceCreateScreen() {
   const [refObjectUri, setRefObjectUri] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [safeReplaceExampleUri, setSafeReplaceExampleUri] = useState<string | null>(null);
+  const [safeExamplePhotos, setSafeExamplePhotos] = useState<string[]>([]);
 
   // Brush state
   const [brushSize, setBrushSize] = useState<number>(32);
@@ -73,6 +74,17 @@ export default function ReplaceCreateScreen() {
       active = false;
     };
   }, [replaceExampleUri]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const normalized = await Promise.all(examplePhotos.map((u) => normalizeImageUri(u)));
+      if (active) setSafeExamplePhotos(normalized);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [examplePhotos]);
 
   const distance2 = (a: {x:number;y:number}, b:{x:number;y:number}) => {
     const dx = a.x - b.x, dy = a.y - b.y; return dx*dx + dy*dy;
@@ -209,7 +221,7 @@ export default function ReplaceCreateScreen() {
       <View style={{ height: 16 }} />
       <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Example Photos</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
-        {examplePhotos.map((u, idx) => (
+        {(safeExamplePhotos.length ? safeExamplePhotos : examplePhotos).map((u, idx) => (
           <TouchableOpacity
             key={String(idx)}
             onPress={async () => {
