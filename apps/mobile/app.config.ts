@@ -16,7 +16,7 @@ export default ({ config }: any) => ({
   },
   ios: {
     bundleIdentifier: 'com.decorly.app',
-    buildNumber: '70',
+    buildNumber: '72',
     icon: './assets/App Logo.png',
     infoPlist: {
       NSCameraUsageDescription: 'Used to capture room photos for redesigns.',
